@@ -46,7 +46,7 @@ tokens = ('int_32_keyword',
 def t_new_line(t):
     r"""\n+"""
 
-    Lex.get_instance().inc_line_number(len(t.value))
+    t.lexer.lineno += len(t.value)
 
 
 def t_int_32_keyword(t):
@@ -422,7 +422,7 @@ def p_print_string(p):
 
 
 def p_error(p):
-    Utils.Utils.handle_compiler_error("Failed to parse tokens")
+    Utils.Utils.handle_compiler_error("Failed to parse tokens in line" + " " + str(p.lineno - 1))
 
     p[0] = None
 
@@ -443,12 +443,6 @@ class Lex:
 
     def parse_to_tokens(self, text):
         self.__lex.input(text)
-
-    def inc_line_number(self, count):
-        self.__line_number += count
-
-    def get_current_line_number(self):
-        return self.__line_number
 
 
 class Yacc:
