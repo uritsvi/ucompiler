@@ -1,0 +1,29 @@
+int_32 i = 0;
+
+while(i < 101)
+{
+    if((i % 3 == 0) && (i % 5 == 0))
+    {
+        @print "fizz buzz\n";
+    }
+    else
+    {
+        if(i % 3 == 0)
+        {
+            @print "fizz\n";
+        }
+        else
+        {
+            if(i % 5 == 0)
+            {
+                @print "buzz\n";
+            }
+            else
+            {
+                @print i;
+            }
+        }
+    }
+
+    i = i + 1;
+}

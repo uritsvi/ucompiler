@@ -1,0 +1,10 @@
+int_32 a = 5;
+
+if(a > 2)
+{
+    @print a;    
+}
+else
+{
+    @print "hello\n";
+}

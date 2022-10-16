@@ -1,0 +1,11 @@
+int_32 a = 5;
+int_32 c = 7;
+
+while(c > 5)
+{
+    a = a + 1;
+    c = c - 1;
+}
+
+@print a;
+@print c;

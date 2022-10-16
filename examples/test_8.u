@@ -1,0 +1,7 @@
+int_32 a = 9;
+int_32 b = 8;
+
+if(a != b)
+{
+    @print "hello!";
+}
