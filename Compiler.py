@@ -32,7 +32,7 @@ class Compiler:
         asm_code = asm.gen(ir_program)
         print(asm_code)
 
-        file_name = src_file.rsplit('.', maxsplit=1)[0] + ".asm"
+        file_name = os.path.join(os.getcwd(), src_file.rsplit('.', maxsplit=1)[0] + ".asm")
         os.chdir(os.path.dirname(src_file))
         with open(file_name, "w") as file:
             file.write(asm_code)
