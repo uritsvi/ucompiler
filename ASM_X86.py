@@ -16,60 +16,6 @@ class RegistersType(Enum):
     edx = 3
 
 
-class Register:
-    @abstractmethod
-    def get_name(self):
-        pass
-
-    @abstractmethod
-    def get_type(self):
-        pass
-
-
-class eax_Register(Register):
-    def __init__(self):
-        self.__name = "eax"
-
-    def get_name(self):
-        return self.__name
-
-    def get_type(self):
-        return RegistersType.eax
-
-
-class ebx_Register(Register):
-    def __init__(self):
-        self.__name = "ebx"
-
-    def get_name(self):
-        return self.__name
-
-    def get_type(self):
-        return RegistersType.ebx
-
-
-class ecx_Register(Register):
-    def __init__(self):
-        self.__name = "ecx"
-
-    def get_name(self):
-        return self.__name
-
-    def get_type(self):
-        return RegistersType.ecx
-
-
-class edx_Register(Register):
-    def __init__(self):
-        self.__name = "edx"
-
-    def get_name(self):
-        return self.__name
-
-    def get_type(self):
-        return RegistersType.edx
-
-
 class Registers:
     __instance = None
 
@@ -81,22 +27,16 @@ class Registers:
         return cls.__instance
 
     def __init__(self):
-        self.__free_registers = {RegistersType.eax: eax_Register(),
-                                 RegistersType.ebx: ebx_Register(),
-                                 RegistersType.ecx: ecx_Register(),
-                                 RegistersType.edx: edx_Register()}
-
-        self.__all_registers = copy.deepcopy(self.__free_registers)
+        self.__free_registers = [RegistersType.eax,
+                                 RegistersType.ebx,
+                                 RegistersType.ecx,
+                                 RegistersType.edx]
 
     def get_free_register(self):
-        register = self.__free_registers.popitem()
-        return register[1]
+        return self.__free_registers.pop()
 
     def free_register(self, register):
-        self.__free_registers[register.get_type()] = register
-
-    def get_register(self, register_name):
-        return self.__all_registers[register_name]
+        self.__free_registers.append(register)
 
 
 class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
@@ -283,7 +223,7 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     @writer(IR.IR_AssignTemp)
     def write(self, assign_temp, context):
         string = \
-            self.__write_mov_to_register(assign_temp.get_temp().get_value().get_name(),
+            self.__write_mov_to_register(assign_temp.get_temp().get_value().name,
                                          self.write(assign_temp.get_value(), context)) + "\n"
 
         context.append_string(string)
@@ -298,107 +238,107 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
     @writer(IR.IR_TempValue)
     def write(self, temp_value, context):
-        return temp_value.get_value().get_name()
+        return temp_value.get_value().name
 
     @writer(IR.IR_AddOperation)
     def write(self, add_operation, context):
         string =\
-            self.__write_add(add_operation.get_dest_temp().get_value().get_name(),
-                             add_operation.get_src_temp().get_value().get_name()) + "\n"
+            self.__write_add(add_operation.get_dest_temp().get_value().name,
+                             add_operation.get_src_temp().get_value().name) + "\n"
 
         context.append_string(string)
 
     @writer(IR.IR_SUbOperation)
     def write(self, sub_operation, context):
         string = \
-            self.__write_sub(sub_operation.get_dest_temp().get_value().get_name(),
-                             sub_operation.get_src_temp().get_value().get_name()) + "\n"
+            self.__write_sub(sub_operation.get_dest_temp().get_value().name,
+                             sub_operation.get_src_temp().get_value().name) + "\n"
 
         context.append_string(string)
 
     @writer(IR.IR_MulOperation)
     def write(self, mul_operation, context):
         string = \
-            self.__write_imul(mul_operation.get_dest_temp().get_value().get_name(),
-                              mul_operation.get_src_temp().get_value().get_name()) + "\n"
+            self.__write_imul(mul_operation.get_dest_temp().get_value().name,
+                              mul_operation.get_src_temp().get_value().name) + "\n"
 
         context.append_string(string)
 
     @abstractmethod
     @writer(IR.IR_DevRestOperation)
     def write(self, dev_rest_operation, context):
-        eax_register = self.__registers.get_register(RegistersType.eax)
-        ecx_register = self.__registers.get_register(RegistersType.ecx)
-        edx_register = self.__registers.get_register(RegistersType.edx)
+        eax_register = RegistersType.eax
+        ecx_register = RegistersType.ecx
+        edx_register = RegistersType.edx
 
         string = self.__write_assign_local_var(self.__div_temp_1,
-                                               eax_register.get_name()) + "\n"
+                                               eax_register.name) + "\n"
 
         string += self.__write_assign_local_var(self.__div_temp_2,
-                                                ecx_register.get_name()) + "\n"
+                                                ecx_register.name) + "\n"
 
         string += self.__write_assign_local_var(self.__div_temp_3,
-                                                edx_register.get_name()) + "\n"
+                                                edx_register.name) + "\n"
 
-        string += self.__write_mov_to_register(eax_register.get_name(),
-                                               dev_rest_operation.get_dest_temp().get_value().get_name()) + "\n"
+        string += self.__write_mov_to_register(eax_register.name,
+                                               dev_rest_operation.get_dest_temp().get_value().name) + "\n"
 
-        string += self.__write_mov_to_register(ecx_register.get_name(),
-                                               dev_rest_operation.get_src_temp().get_value().get_name()) + "\n"
+        string += self.__write_mov_to_register(ecx_register.name,
+                                               dev_rest_operation.get_src_temp().get_value().name) + "\n"
 
-        string += self.__write_idev(ecx_register.get_name()) + "\n"
+        string += self.__write_idev(ecx_register.name) + "\n"
 
-        string += self.__write_assign_local_var(self.__div_temp_RES, edx_register.get_name()) + "\n"
+        string += self.__write_assign_local_var(self.__div_temp_RES, edx_register.name) + "\n"
 
-        string += self.__write_mov_to_register(eax_register.get_name(),
+        string += self.__write_mov_to_register(eax_register.name,
                                                self.__div_temp_1) + "\n"
 
-        string += self.__write_mov_to_register(ecx_register.get_name(),
+        string += self.__write_mov_to_register(ecx_register.name,
                                                self.__div_temp_2) + "\n"
 
-        string += self.__write_mov_to_register(edx_register.get_name(),
+        string += self.__write_mov_to_register(edx_register.name,
                                                self.__div_temp_3) + "\n"
 
-        string += self.__write_mov_to_register(dev_rest_operation.get_dest_temp().get_value().get_name(),
+        string += self.__write_mov_to_register(dev_rest_operation.get_dest_temp().get_value().name,
                                                self.__div_temp_RES) + "\n"
 
         context.append_string(string)
 
     @writer(IR.IR_DevOperation)
     def write(self, dev_operation, context):
-        eax_register = self.__registers.get_register(RegistersType.eax)
-        ecx_register = self.__registers.get_register(RegistersType.ecx)
-        edx_register = self.__registers.get_register(RegistersType.edx)
+        eax_register = RegistersType.eax
+        ecx_register = RegistersType.ecx
+        edx_register = RegistersType.edx
 
         string = self.__write_assign_local_var(self.__div_temp_1,
-                                               eax_register.get_name()) + "\n"
+                                               eax_register.name) + "\n"
 
         string += self.__write_assign_local_var(self.__div_temp_2,
-                                                ecx_register.get_name()) + "\n"
+                                                ecx_register.name) + "\n"
 
         string += self.__write_assign_local_var(self.__div_temp_3,
-                                                edx_register.get_name()) + "\n"
+                                                edx_register.name) + "\n"
 
-        string += self.__write_mov_to_register(eax_register.get_name(),
-                                               dev_operation.get_dest_temp().get_value().get_name()) + "\n"
+        string += self.__write_mov_to_register(eax_register.name,
+                                               dev_operation.get_dest_temp().get_value().name) + "\n"
 
-        string += self.__write_mov_to_register(ecx_register.get_name(),
-                                               dev_operation.get_src_temp().get_value().get_name()) + "\n"
+        string += self.__write_mov_to_register(ecx_register.name,
+                                               dev_operation.get_src_temp().get_value().name) + "\n"
 
-        string += self.__write_idev(dev_operation.get_src_temp().get_value().get_name()) + "\n"
+        string += self.__write_idev(dev_operation.get_src_temp().get_value().name) + "\n"
 
-        string += self.__write_assign_local_var(self.__div_temp_RES, eax_register.get_name()) + "\n"
+        string += self.__write_assign_local_var(self.__div_temp_RES, eax_register.name) + "\n"
 
-        string += self.__write_mov_to_register(eax_register.get_name(),
+        string += self.__write_mov_to_register(eax_register.name,
                                                self.__div_temp_1) + "\n"
 
-        string += self.__write_mov_to_register(ecx_register.get_name(),
+        string += self.__write_mov_to_register(ecx_register.name,
                                                self.__div_temp_2) + "\n"
 
-        string += self.__write_mov_to_register(edx_register.get_name(),
+        string += self.__write_mov_to_register(edx_register.name,
                                                self.__div_temp_3) + "\n"
 
-        string += self.__write_mov_to_register(dev_operation.get_dest_temp().get_value().get_name(),
+        string += self.__write_mov_to_register(dev_operation.get_dest_temp().get_value().name,
                                                self.__div_temp_RES) + "\n"
 
         context.append_string(string)
@@ -406,8 +346,8 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     @writer(IR.IR_Condition)
     def write(self, condition, context):
         string = \
-            self.__write_cmp(condition.get_expression_1().get_value().get_name(),
-                             condition.get_expression_2().get_value().get_name()) + "\n"
+            self.__write_cmp(condition.get_expression_1().get_value().name,
+                             condition.get_expression_2().get_value().name) + "\n"
 
         context.append_string(string)
 
