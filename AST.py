@@ -243,3 +243,11 @@ class AST_PrintString(AST_Node):
 
     def get_string(self):
         return self.__string
+
+
+class AST_Exit(AST_Node):
+    def __init__(self, exit_code):
+        self.__exit_code = exit_code
+
+    def get_exit_code(self):
+        return self.__exit_code

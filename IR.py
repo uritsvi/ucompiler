@@ -485,6 +485,17 @@ class IR_PrintString(IR_Interface):
         pass
 
 
+class IR_Exit(IR_Interface):
+    def __init__(self, exit_code):
+        self.__exit_code = exit_code
+
+    def get_exit_code(self):
+        return self.__exit_code
+
+    def add_free_operation(self, current_basic_block):
+        pass
+
+
 class IR_Generator(AST_Visitor):
     def __init__(self):
         self.__main_function = IR_Function()
@@ -819,3 +830,8 @@ class IR_Generator(AST_Visitor):
     def visit(self, print_statement, context):
         ir_print = IR_PrintString(print_statement.get_string())
         self.__main_function.get_current_basic_block().add_statement(ir_print)
+
+    @visitor(AST_Exit)
+    def visit(self, exit_statement, context):
+        ir_exit_statement = IR_Exit(self.visit(exit_statement.get_exit_code(), context))
+        self.__main_function.get_current_basic_block().add_statement(ir_exit_statement)

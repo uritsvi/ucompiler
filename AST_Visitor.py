@@ -149,3 +149,8 @@ class AST_Visitor:
     def visit(self, print_statement, context):
         pass
 
+    @abstractmethod
+    @visitor(AST_Exit)
+    def visit(self, exit_statement, context):
+        pass
+

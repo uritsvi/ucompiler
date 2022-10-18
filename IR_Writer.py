@@ -165,3 +165,8 @@ class IR_Writer:
     @writer(IR.AST_PrintString)
     def write(self, print_string, context):
         pass
+
+    @abstractmethod
+    @writer(IR.IR_Exit)
+    def write(self, exit_statement, context):
+        pass

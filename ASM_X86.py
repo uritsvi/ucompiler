@@ -266,6 +266,11 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         string = "printf" + "(" + "\"" + string + "\"" + ")"
         return string
 
+    @classmethod
+    def __write_exit(cls, exit_code):
+        string = "invoke ExitProcess" + "," + str(exit_code)
+        return string
+
     @writer(IR.IR_Label)
     def write(self, label, context):
         string = \
@@ -538,5 +543,13 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         string = \
             self.__write_print_string(print_string.get_string()) + "\n"
+
+        context.append_string(string)
+
+    @writer(IR.IR_Exit)
+    def write(self, exit_statement, context):
+
+        string = \
+            self.__write_exit(self.write(exit_statement.get_exit_code(), context)) + "\n"
 
         context.append_string(string)

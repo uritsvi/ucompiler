@@ -201,3 +201,11 @@ class AST_XML_Program(AST_Visitor):
         xml_object = self.create_element("print string")
 
         return xml_object
+
+    @visitor(AST_Exit)
+    def visit(self, exit_statement, context):
+        xml_object = self.create_element("exit statement")
+
+        xml_object.appendChild(self.visit(exit_statement.get_exit_code(), None))
+
+        return xml_object

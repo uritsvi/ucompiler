@@ -42,6 +42,7 @@ tokens = ('int_32_keyword',
           'or_operator',
 
           'print',
+          'exit',
 
           'semicolon',
           'new_line')
@@ -80,6 +81,11 @@ def t_while_keyword(t):
 
 def t_print(t):
     r"""@print"""
+    return t
+
+
+def t_exit(t):
+    r"""@exit"""
     return t
 
 
@@ -174,7 +180,8 @@ def p_statement(p):
 def p_basic_block_command(p):
     """basic_block_command : def_var semicolon
                              | int_assignment semicolon
-                             | print_statement semicolon"""
+                             | print_statement semicolon
+                             | exit_statement semicolon"""
 
     p[0] = p[1]
 
@@ -469,6 +476,13 @@ def p_int_value(p):
 
     AST_Int = AST.AST_Integer(p[1], DataTypes.int_32())
     p[0] = AST_Int
+
+
+def p_exit(p):
+    """exit_statement : exit int_expression"""
+
+    AST_ExitStatement = AST.AST_Exit(p[2])
+    p[0] = AST_ExitStatement
 
 
 def p_print_statement(p):
