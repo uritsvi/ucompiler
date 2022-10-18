@@ -1,3 +1,6 @@
+from abc import abstractmethod
+
+
 class AST_Node:
     pass
 
@@ -14,23 +17,37 @@ class AST_CodeBlock(AST_Node):
 
 
 class AST_Value(AST_Node):
-    pass
+
+    @abstractmethod
+    def get_data_type(self):
+        pass
 
 
 class AST_Integer(AST_Value):
-    def __init__(self, value):
+    def __init__(self, value, data_type):
         self.__value = value
+        self.__data_type = data_type
 
     def get_value(self):
         return self.__value
 
+    def set_data_type(self, data_type):
+        self.__data_type = data_type
+
+    def get_data_type(self):
+        return self.__data_type
+
 
 class AST_Variable(AST_Value):
-    def __init__(self, name):
+    def __init__(self, name, data_type):
         self.__name = name
+        self.__data_type = data_type
 
     def get_name(self):
         return self.__name
+
+    def get_data_type(self):
+        return self.__data_type
 
 
 class AST_NewVariable(AST_Node):
@@ -55,6 +72,9 @@ class AST_Expression(AST_Value):
 
     def get_expression_2(self):
         return self.__expression_2
+
+    def get_data_type(self):
+        pass
 
 
 class AST_DefVar(AST_Node):
@@ -206,11 +226,15 @@ class OrOperatorAST(AST_ConditionOperator):
 
 
 class AST_Print(AST_Node):
-    def __init__(self, var_name):
+    def __init__(self, print_format, var_name):
         self.__var_name = var_name
+        self.__print_format = print_format
 
     def get_var_name(self):
         return self.__var_name
+
+    def get_print_format(self):
+        return self.__print_format
 
 
 class AST_PrintString(AST_Node):

@@ -1,12 +1,13 @@
-import copy
-
 import ASM
 
 from enum import Enum
 from typing import Final
 
+import DataTypes
+import Utils
 from IR_Writer import *
 import IR
+import SymbolTable
 
 
 class RegistersType(Enum):
@@ -14,6 +15,70 @@ class RegistersType(Enum):
     ebx = 1
     ecx = 2
     edx = 3
+
+    al = 4,
+    bl = 5,
+    cl = 6,
+    dl = 7
+
+
+class Register:
+
+    def __init__(self):
+        self.__size_in_bites = 4
+
+    def get_part_of_register(self, size_in_bites):
+        if size_in_bites == 1:
+            return self._get_one_bite_part_of_register()
+        else:
+            return self._get_full_register_type()
+
+    @abstractmethod
+    def _get_one_bite_part_of_register(self):
+        pass
+
+    @abstractmethod
+    def _get_full_register_type(self):
+        pass
+
+    def get_size_in_bites(self):
+        return self.__size_in_bites
+
+
+class eax_Register(Register):
+
+    def _get_full_register_type(self):
+        return RegistersType.eax
+
+    def _get_one_bite_part_of_register(self):
+        return RegistersType.al
+
+
+class ebx_Register(Register):
+
+    def _get_full_register_type(self):
+        return RegistersType.ebx
+
+    def _get_one_bite_part_of_register(self):
+        return RegistersType.bl
+
+
+class ecx_Register(Register):
+
+    def _get_full_register_type(self):
+        return RegistersType.ecx
+
+    def _get_one_bite_part_of_register(self):
+        return RegistersType.cl
+
+
+class edx_Register(Register):
+
+    def _get_full_register_type(self):
+        return RegistersType.edx
+
+    def _get_one_bite_part_of_register(self):
+        return RegistersType.dl
 
 
 class Registers:
@@ -32,18 +97,29 @@ class Registers:
                                  RegistersType.ecx,
                                  RegistersType.edx]
 
+        self.__all_full_registers = {RegistersType.eax: eax_Register(),
+                                     RegistersType.ebx: ebx_Register(),
+                                     RegistersType.ecx: ecx_Register(),
+                                     RegistersType.edx: edx_Register()}
+
     def get_free_register(self):
         return self.__free_registers.pop()
 
     def free_register(self, register):
         self.__free_registers.append(register)
 
+    def get_register_class(self, register_type):
+        return self.__all_full_registers[register_type]
+
 
 class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     def __init__(self):
+
         super().__init__()
 
+        self.__data_types = {1: "BYTE", 4: "DWORD"}
         self.__registers = Registers()
+        self.__symbol_tabel = None
 
         """
         The div_temps will hold the values of the eax edx and ecx registers  
@@ -55,6 +131,16 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         self.__div_temp_2: Final[str] = "div_temp_2"
         self.__div_temp_3: Final[str] = "div_temp_3"
         self.__div_temp_RES: Final[str] = "div_temp_res"
+
+    def __data_type_to_asm_data_type(self, size_in_bites):
+        data_type = self.__data_types.get(size_in_bites)
+
+        if data_type is None:
+            Utils.Utils.handle_compiler_error("compiler error: data type for size " +
+                                              size_in_bites + " " + "is undefined")
+            return None
+
+        return data_type
 
     def gen(self, ir_program):
         before_program = ".386\n" \
@@ -72,11 +158,13 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
                         "main endp\n" \
                         "end start\n"
 
+        self.__symbol_tabel = ir_program.get_symbol_tabel()
+
         context = ASM.Context()
 
         context.append_string(before_program)
 
-        self.write(ir_program.get_symbol_tabel(), context)
+        self.write(self.__symbol_tabel, context)
         self.write(ir_program.get_main_function(), context)
 
         context.append_string(after_program)
@@ -84,8 +172,13 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         return context.poll_string()
 
     @classmethod
-    def __write_def_var(cls, name):
-        string = "LOCAL" + " " + name + ":" + "DWORD"
+    def __write_xor(cls, dest, src):
+        string = "xor" + " " + dest + "," + src
+        return string
+
+    @classmethod
+    def __write_def_var(cls, name, data_type):
+        string = "LOCAL" + " " + name + ":" + data_type
         return string
 
     @classmethod
@@ -164,13 +257,13 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         return string
 
     @classmethod
-    def __write_print(cls, var_name):
-        string = "printf" + "(" + "\"%d\\n\"" + "," + var_name + ")"
+    def __write_print(cls, print_format, var_name):
+        string = "printf" + "(" + print_format + "," + var_name + ")"
         return string
 
     @classmethod
     def __write_print_string(cls, string):
-        string = "printf" + "(" + string + ")"
+        string = "printf" + "(" + "\"" + string + "\"" + ")"
         return string
 
     @writer(IR.IR_Label)
@@ -184,14 +277,16 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     def write(self, symbol_table, context):
         string = ""
 
-        vars_names = symbol_table.get_all_vars()
-        vars_names.append(self.__div_temp_1)
-        vars_names.append(self.__div_temp_2)
-        vars_names.append(self.__div_temp_3)
-        vars_names.append(self.__div_temp_RES)
+        vars = symbol_table.get_all_vars()
 
-        for var_name in vars_names:
-            string += self.__write_def_var(var_name) + "\n"
+        vars[self.__div_temp_1] = (SymbolTable.Var(self.__div_temp_1, DataTypes.int_32()))
+        vars[self.__div_temp_2] = (SymbolTable.Var(self.__div_temp_2, DataTypes.int_32()))
+        vars[self.__div_temp_3] = (SymbolTable.Var(self.__div_temp_3, DataTypes.int_32()))
+        vars[self.__div_temp_RES] = (SymbolTable.Var(self.__div_temp_RES, DataTypes.int_32()))
+
+        for var in vars.values():
+            string += self.__write_def_var(var.get_name(), self.__data_type_to_asm_data_type
+                                          (var.get_data_type().get_size_in_bites())) + "\n"
 
         context.append_string(string)
 
@@ -214,16 +309,33 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
     @writer(IR.IR_Assignment)
     def write(self, assignment, context):
+        context.set_data_size(self.__symbol_tabel.get_var(assignment.get_var_name()).
+                              get_data_type().get_size_in_bites())
+
         string = \
             self.__write_assign_local_var(assignment.get_var_name(),
-                                          self.write(assignment.get_value(),
-                                          context)) + "\n"
+                                          self.write(assignment.get_value(), context)) + "\n"
         context.append_string(string)
 
     @writer(IR.IR_AssignTemp)
     def write(self, assign_temp, context):
-        string = \
-            self.__write_mov_to_register(assign_temp.get_temp().get_value().name,
+        var_size_in_bites = assign_temp.get_value().get_data_type().get_size_in_bites()
+
+        register_enum = assign_temp.get_temp().get_value()
+
+        register = Registers.get_instance().get_register_class\
+            (register_enum)\
+
+        part_of_register = register.get_part_of_register(var_size_in_bites)
+
+        string = ""
+
+        if var_size_in_bites < register.get_size_in_bites():
+            string += \
+                self.__write_xor(register_enum.name, register_enum.name) + "\n"
+
+        string += \
+            self.__write_mov_to_register(part_of_register.name,
                                          self.write(assign_temp.get_value(), context)) + "\n"
 
         context.append_string(string)
@@ -238,7 +350,8 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
     @writer(IR.IR_TempValue)
     def write(self, temp_value, context):
-        return temp_value.get_value().name
+        return Registers.get_instance().get_register_class(temp_value.get_value()).\
+            get_part_of_register(context.get_data_size()).name
 
     @writer(IR.IR_AddOperation)
     def write(self, add_operation, context):
@@ -415,7 +528,8 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     def write(self, print_statement, context):
 
         string = \
-            self.__write_print(print_statement.get_var().get_name()) + "\n"
+            self.__write_print(print_statement.get_print_format(),
+                               print_statement.get_var().get_name()) + "\n"
 
         context.append_string(string)
 

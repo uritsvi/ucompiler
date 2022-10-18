@@ -1,11 +1,14 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
+import DataTypes
 import Utils
 import SymbolTable
 import AST
 
 tokens = ('int_32_keyword',
+          'char_keyword',
+
           'if_keyword',
           'else_keyword',
           'while_keyword',
@@ -17,6 +20,7 @@ tokens = ('int_32_keyword',
           'close_curly_brackets',
 
           'number',
+          'char_value',
           'string',
 
           'name',
@@ -54,6 +58,11 @@ def t_int_32_keyword(t):
     return t
 
 
+def t_char_keyword(t):
+    r"""char"""
+    return t
+
+
 def t_if_keyword(t):
     r"""if"""
     return t
@@ -80,8 +89,24 @@ t_close_parenthesise = r'\)'
 t_open_curly_brackets = r'\{'
 t_close_curly_brackets = r'\}'
 
+
+def t_string(t):
+    r"""\".+\""""
+
+    t.value = t.value.split("\"", 2)[1]
+
+    return t
+
+
+def t_char_value(t):
+    r"""'.'"""
+
+    t.value = t.value.split("'", 2)[1]
+
+    return t
+
+
 t_number = r'\d+'
-t_string = r'\".+\"'
 
 t_name = r'\w+'
 
@@ -147,7 +172,7 @@ def p_statement(p):
 
 
 def p_basic_block_command(p):
-    """basic_block_command : def_int semicolon
+    """basic_block_command : def_var semicolon
                              | int_assignment semicolon
                              | print_statement semicolon"""
 
@@ -258,7 +283,7 @@ def p_if_statement(p):
     """if_statement : if_keyword open_parenthesise condition close_parenthesise scope else_statement
                       | if_keyword open_parenthesise condition close_parenthesise scope"""
 
-    if len(p) is 7:
+    if len(p) == 7:
         AST_if_statement = AST.AST_IfStatement(p[3], p[5], p[6])
         p[0] = AST_if_statement
     else:
@@ -280,12 +305,38 @@ def p_while_statement(p):
     p[0] = AST_while_statement
 
 
+def p_def_var(p):
+    """def_var : def_int
+               | def_char"""
+    p[0] = p[1]
+
+
 def p_def_int(p):
     """def_int : int_32_keyword new_var_name
-                 | int_32_keyword new_var_name equals_operator int_expression"""
+                 | int_32_keyword new_var_name equals_operator value"""
+
+    SymbolTable.Tables.get_instance().get_current_table().\
+        set_var_data_type(p[2].get_name(), DataTypes.int_32())
 
     if len(p) == 3:
-        AST_assignment = AST.AST_Assignment(p[2], AST.AST_Integer(0))
+        AST_assignment = AST.AST_Assignment(p[2], AST.AST_Integer(0, DataTypes.int_32()))
+        AST_def_var = AST.AST_DefVar(p[2], AST_assignment)
+    else:
+        AST_assignment = AST.AST_Assignment(p[2], p[4])
+        AST_def_var = AST.AST_DefVar(p[2], AST_assignment)
+
+    p[0] = AST_def_var
+
+
+def p_def_char(p):
+    """def_char : char_keyword new_var_name
+                  | char_keyword new_var_name equals_operator value"""
+
+    SymbolTable.Tables.get_instance().get_current_table().\
+        set_var_data_type(p[2].get_name(), DataTypes.char())
+
+    if len(p) == 3:
+        AST_assignment = AST.AST_Assignment(p[2], AST.AST_Integer(0, DataTypes.char()))
         AST_def_var = AST.AST_DefVar(p[2], AST_assignment)
     else:
         AST_assignment = AST.AST_Assignment(p[2], p[4])
@@ -301,8 +352,23 @@ def p_int_assignment(p):
     p[0] = AST_assignment
 
 
+def p_value(p):
+    """value : int_expression
+               | char_int_value"""
+
+    p[0] = p[1]
+
+
+def p_char_int_value(p):
+    """char_int_value : char_value"""
+
+    AST_Integer = AST.AST_Integer(ord(p[1]), DataTypes.char())
+    p[0] = AST_Integer
+
+
 def p_int_expression(p):
     """int_expression : int_value
+                        | char_int_value
                         | int_expression_in_parenthesise
                         | var_name
                         | add_expression
@@ -374,7 +440,10 @@ def p_var_name(p):
     var_name = \
         SymbolTable.Tables.get_instance().get_current_table().get_var_name(p[1])
 
-    AST_var = AST.AST_Variable(var_name)
+    var = \
+        SymbolTable.Tables.get_instance().get_current_table().get_var(var_name)
+
+    AST_var = AST.AST_Variable(var_name, var.get_data_type())
     p[0] = AST_var
 
 
@@ -398,7 +467,7 @@ def p_new_var_name(p):
 def p_int_value(p):
     """int_value : number"""
 
-    AST_Int = AST.AST_Integer(p[1])
+    AST_Int = AST.AST_Integer(p[1], DataTypes.int_32())
     p[0] = AST_Int
 
 
@@ -412,7 +481,8 @@ def p_print_statement(p):
 def p_print_var(p):
     """print_var : print var_name"""
 
-    p[0] = AST.AST_Print(p[2])
+    p[0] = AST.AST_Print(SymbolTable.Tables.get_instance().
+                         get_current_table().get_var(p[2].get_name()).get_data_type().get_print_format(), p[2])
 
 
 def p_print_string(p):
@@ -422,7 +492,7 @@ def p_print_string(p):
 
 
 def p_error(p):
-    Utils.Utils.handle_compiler_error("Failed to parse tokens in line" + " " + str(p.lineno - 1))
+    Utils.Utils.handle_compiler_error("Failed to parse tokens in line" + " " + str(p.lineno - 1) + " " + "token" + " " + "\"" + p.value + "\"")
 
     p[0] = None
 

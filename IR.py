@@ -133,10 +133,16 @@ class IR_Value(IR_Interface):
     def add_free_operation(self, basic_block):
         pass
 
+    @abstractmethod
+    def get_data_type(self):
+        pass
+
 
 class IR_Integer(IR_Value):
-    def __init__(self, value):
+
+    def __init__(self, value, data_type):
         self.__value = value
+        self.__data_type = data_type
 
     def get_value(self):
         return self.__value
@@ -144,10 +150,15 @@ class IR_Integer(IR_Value):
     def add_free_operation(self, current_basic_block):
         current_basic_block.add_statement(FreeInteger(self.__value))
 
+    def get_data_type(self):
+        return self.__data_type
+
 
 class IR_Variable(IR_Value):
-    def __init__(self, name):
+
+    def __init__(self, name, data_type):
         self.__name = name
+        self.__data_type = data_type
 
     def get_value(self):
         return self.__name
@@ -155,11 +166,15 @@ class IR_Variable(IR_Value):
     def add_free_operation(self, current_basic_block):
         current_basic_block.add_statement(FreeVariable(self.__name))
 
+    def get_data_type(self):
+        return self.__data_type
+
 
 class IR_TempValue(IR_Value):
 
-    def __init__(self):
+    def __init__(self, data_type):
         self.__value = None
+        self.__data_type = data_type
 
     # set the temp
     def set_value(self, data):
@@ -172,10 +187,13 @@ class IR_TempValue(IR_Value):
     def add_free_operation(self, current_basic_block):
         current_basic_block.add_statement(FreeTemp(self))
 
+    def get_data_type(self):
+        return self.__data_type
+
 
 class DefTemp(IR_Interface):
-    def __init__(self):
-        self.__temp = IR_TempValue()
+    def __init__(self, data_type):
+        self.__temp = IR_TempValue(data_type)
 
     def get_temp(self):
         return self.__temp
@@ -412,29 +430,45 @@ class IR_Program:
         return self.__symbol_tabel
 
 
-class IR_Function_SymbolTabel(IR_Interface):
+class IR_Var:
+    def __init__(self, name, data_type):
+        self.__name = name
+        self.__data_type = data_type
+
+    def get_name(self):
+        return self.__name
+
+    def get_data_type(self):
+        return self.__data_type
+
+
+class IR_Function_SymbolTabel:
 
     def __init__(self):
-        self.__vars = []
+        self.__vars = {}
 
     def get_all_vars(self):
 
         for tabel in SymbolTable.Tables.get_instance().get_all_tables():
-            for var_name in tabel.get_all_vars():
-                self.__vars.append(var_name)
+            for var in tabel.get_all_vars():
+                self.__vars[var.get_name()] = (IR_Var(var.get_name(), var.get_data_type()))
 
         return self.__vars
 
-    def add_free_operation(self, current_basic_block):
-        pass
+    def get_var(self, var_name):
+        return self.__vars.get(var_name)
 
 
 class IR_Print(IR_Interface):
-    def __init__(self, var_name):
+    def __init__(self, print_format, var_name):
         self.__var_name = var_name
+        self.__print_format = print_format
 
     def get_var(self):
         return self.__var_name
+
+    def get_print_format(self):
+        return self.__print_format
 
     def add_free_operation(self, current_basic_block):
         pass
@@ -470,10 +504,10 @@ class IR_Generator(AST_Visitor):
 
     @visitor(AST_Integer)
     def visit(self, integer, context):
-        def_temp = DefTemp()
+        def_temp = DefTemp(integer.get_data_type())
         temp = def_temp.get_temp()
 
-        integer = IR_Integer(integer.get_value())
+        integer = IR_Integer(integer.get_value(), integer.get_data_type())
         set_temp = IR_AssignTemp(temp, integer)
 
         self.__main_function.get_current_basic_block().add_statement(def_temp)
@@ -485,10 +519,10 @@ class IR_Generator(AST_Visitor):
 
     @visitor(AST_Variable)
     def visit(self, variable, context):
-        def_temp = DefTemp()
+        def_temp = DefTemp(variable.get_data_type())
         temp = def_temp.get_temp()
 
-        variable = IR_Variable(variable.get_name())
+        variable = IR_Variable(variable.get_name(), variable.get_data_type())
         set_temp = IR_AssignTemp(temp, variable)
 
         self.__main_function.get_current_basic_block().add_statement(def_temp)
@@ -776,7 +810,9 @@ class IR_Generator(AST_Visitor):
 
     @visitor(AST_Print)
     def visit(self, print_statement, context):
-        ir_print = IR_Print(print_statement.get_var_name())
+        ir_print = IR_Print(print_statement.get_print_format(),
+                            print_statement.get_var_name())
+
         self.__main_function.get_current_basic_block().add_statement(ir_print)
 
     @visitor(AST_PrintString)
