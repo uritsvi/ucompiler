@@ -1,0 +1,58 @@
+1. Data Types
+
+int_32 - a simple 32 bits integer
+char - a simple character
+
+Def var:
+Example:
+int_32 a;
+
+All variables can be declared anywhere in the program.
+Variables not in the same scope can have the same name
+Var can be accessed in his scope and in any other child scope(scope inside the scope).
+
+Assignment:
+Example:
+a = 10;
+
+assign the var value
+
+2. Expression -
+Example:
+a + 5 * 6
+
+expression operator expression or number
+
+3. Condition -
+Example a < b || b < a
+
+condition operator condition
+
+4. While Loop -
+Example:
+while(a < 10)
+{
+    a = a + 1
+}
+while the condition is True execute all the commends in the scope
+
+
+5. if/if - else statements -
+Example:
+if(a < 10)
+{
+    @print "good";
+}
+else
+{
+    @print "bad";
+}
+
+if the condition is True execute the code in the first scope.
+Else if there is an else statement execute the code in the second scope.
+
+6. @print
+Example @print a;
+
+print a string or a var value to the standard output
+
