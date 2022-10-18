@@ -51,8 +51,23 @@ else
 if the condition is True execute the code in the first scope.
 Else if there is an else statement execute the code in the second scope.
 
-6. @print
-Example @print a;
+6. print var
+Example:
+@print a;
 
-print a string or a var value to the standard output
+print's a variable value to the standard output
+
+7. print string
+Example:
+@print "hello world\n";
+
+print's a string to the standard output
+
+8. exit statement
+Example:
+@exit -1
+
+exit the program with the specified exit code
+
+
 
