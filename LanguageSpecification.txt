@@ -15,18 +15,18 @@ Assignment:
 Example:
 a = 10;
 
-assign the var value
+Assign the var value
 
 2. Expression -
 Example:
 a + 5 * 6
 
-expression operator expression or number
+Expression operator expression or number
 
 3. Condition -
 Example a < b || b < a
 
-condition operator condition
+Condition operator condition
 
 4. While Loop -
 Example:
@@ -34,7 +34,7 @@ while(a < 10)
 {
     a = a + 1
 }
-while the condition is True execute all the commends in the scope
+While the condition is True execute all the commends in the scope
 
 
 5. if/if - else statements -
@@ -48,26 +48,26 @@ else
     @print "bad";
 }
 
-if the condition is True execute the code in the first scope.
+If the condition is True execute the code in the first scope.
 Else if there is an else statement execute the code in the second scope.
 
 6. print var
 Example:
 @print a;
 
-print's a variable value to the standard output
+Print's a variable value to the standard output
 
 7. print string
 Example:
 @print "hello world\n";
 
-print's a string to the standard output
+Print's a string to the standard output
 
 8. exit statement
 Example:
 @exit -1
 
-exit the program with the specified exit code
+Exit the program with the specified exit code
 
 
 
