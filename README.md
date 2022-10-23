@@ -14,4 +14,4 @@ Run
 python main.py examples\test_1.u\
 examples\test_1.exe
 
-<img src="example.gif" width="512"/>
+<img src="example.gif" width="1920"/>
