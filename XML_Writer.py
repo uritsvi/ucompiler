@@ -24,6 +24,7 @@ class AST_XML_Program(AST_Visitor):
     @visitor(AST_CodeBlock)
     def visit(self, code_block, context):
         statements = code_block.get_all_statements()
+
         xml_object = self.create_element("code block")
 
         for statement in statements:
@@ -37,7 +38,8 @@ class AST_XML_Program(AST_Visitor):
     @visitor(AST_Integer)
     def visit(self, integer, context):
         xml_object = self.create_element("integer")
-        integer_object = self.create_element("integer:" + str(integer.get_value()))
+
+        integer_object = self.create_element(str(integer.get_value()))
 
         xml_object.appendChild(integer_object)
 
@@ -47,26 +49,23 @@ class AST_XML_Program(AST_Visitor):
     def visit(self, get_value_from_array, context):
         xml_object = self.create_element("array cell")
 
-        index = self.visit(get_value_from_array.get_index(), context)
-        xml_object.appendChild(index)
+        xml_object.appendChild(self.visit(get_value_from_array.get_index(), context))
 
         return xml_object
 
     @visitor(AST_Variable)
     def visit(self, variable, context):
         xml_object = self.create_element("variable")
-        name_object = self.create_element("name:" + variable.get_name())
 
-        xml_object.appendChild(name_object)
+        xml_object.appendChild(self.create_element(variable.get_name()))
 
         return xml_object
 
     @visitor(AST_NewVariable)
     def visit(self, new_variable, context):
         xml_object = self.create_element("new variable")
-        name_object = self.create_element("name:" + new_variable.get_name())
 
-        xml_object.appendChild(name_object)
+        xml_object.appendChild(self.create_element(new_variable.get_name()))
 
         return xml_object
 
@@ -177,6 +176,7 @@ class AST_XML_Program(AST_Visitor):
     @visitor(AST_ElseStatement)
     def visit(self, else_statement, context):
         xml_object = self.create_element("else statement")
+
         xml_object.appendChild(self.visit(else_statement.get_code_block(), None))
 
         return xml_object
@@ -206,12 +206,15 @@ class AST_XML_Program(AST_Visitor):
     def visit(self, read_line_statement, context):
         xml_object = self.create_element("read line")
 
+        xml_object.appendChild(self.create_element(read_line_statement.get_array_name()))
+
         return xml_object
 
     @visitor(AST_Print)
     def visit(self, print_statement, context):
         xml_object = self.create_element("print")
-        self.visit(print_statement.get_value(), None)
+
+        xml_object.appendChild(self.visit(print_statement.get_value(), None))
 
         return xml_object
 
@@ -219,11 +222,15 @@ class AST_XML_Program(AST_Visitor):
     def visit(self, print_statement, context):
         xml_object = self.create_element("print string")
 
+        xml_object.appendChild(self.create_element(print_statement.get_string()))
+
         return xml_object
 
     @visitor(AST_PrintArray)
     def visit(self, print_array, context):
         xml_object = self.create_element("print array")
+
+        xml_object.appendChild(self.create_element(print_array.get_array_name()))
 
         return xml_object
 
