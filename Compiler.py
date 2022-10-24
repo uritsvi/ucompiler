@@ -37,4 +37,7 @@ class Compiler:
         with open(file_name, "w") as file:
             file.write(asm_code)
 
-        os.system("C:\\masm32\\bin\\ml /coff" + " " + file_name + " " + "-link /subsystem:console")
+        ret = os.system("C:\\masm32\\bin\\ml /coff" + " " + file_name + " " + "-link /subsystem:console")
+
+        if ret != 0:
+            exit(-1)

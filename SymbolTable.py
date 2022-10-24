@@ -1,3 +1,6 @@
+from abc import abstractmethod
+
+
 class Tables:
     __instance = None
 
@@ -42,7 +45,17 @@ class Tables:
         return string
 
 
-class Var:
+class SymbolTabelVar:
+    @abstractmethod
+    def get_name(self):
+        pass
+
+    @abstractmethod
+    def is_pointer(self):
+        pass
+
+
+class Var(SymbolTabelVar):
     def __init__(self, name, data_type):
         self.__name = name
         self.__data_type = data_type
@@ -56,68 +69,168 @@ class Var:
     def get_data_type(self):
         return self.__data_type
 
+    def is_pointer(self):
+        return False
+
+
+class Array(SymbolTabelVar):
+    def __init__(self, name, data_type):
+        self.__name = name
+        self.__data_type = data_type
+
+    def get_name(self):
+        return self.__name
+
+    def set_data(self, data_type):
+        self.__data_type = data_type
+
+    def get_data(self):
+        return self.__data_type
+
+    def get_data_type(self):
+        return self.__data_type.get_data_type()
+
+    def get_size(self):
+        return self.__data_type.get_array_size()
+
+    def is_pointer(self):
+        return True
+
 
 class SymbolTable:
     def __init__(self, parent):
-        self.__vars_old_names = {}
-        self.__vars_new_names = {}
+        self.__vars = {}
+        self.__arrays = {}
+
+        self.__old_names = {}
 
         self.__parent = parent
 
-    def add_var(self, name):
-        new_name = Tables.get_instance().get_new_var_name()
+    def add_var(self, name, data_type):
+        new_var = Var(name, data_type)
 
-        new_var = Var(new_name, None)
+        self.__vars[name] = new_var
 
-        self.__vars_old_names[name] = new_var
-        self.__vars_new_names[new_name] = new_var
+    def add_array(self, name, data):
+        new_var = Array(name, data)
 
-        return new_name
+        self.__arrays[name] = new_var
 
-    def set_var_data_type(self, name, type):
-        self.__vars_new_names[name].set_data_type(type)
+        return name
+
+    def set_array_data(self, name, data):
+        self.__vars[name].set_data(data)
 
     def get_var_name(self, name):
-        var_name = self.__vars_old_names.get(name)
+        var_name = self.__old_names.get(name)
 
-        if var_name is not None:
-            var_name = var_name.get_name()
-        else:
-            var_name = self.__parent.get_var_name(name)
+        if var_name is None:
+            var_name = self.__get_var_name_from_parents(name)
 
         return var_name
 
+    def get_array_name(self, name):
+        array_name = self.__old_names.get(name)
+
+        if array_name is None:
+            array_name = self.__get_array_name_from_parents(name)
+
+        return array_name
+
     def get_var(self, name):
-        var = self.__vars_new_names.get(name)
+        var = self.__vars.get(name)
 
         if var is None:
-            var = self.__parent.get_var(name)
+            var = self.__get_var_from_parent_Scope(name)
 
         return var
 
-    def __var_exist_in_parent_scope(self, name):
+    def get_array(self, name):
+        var = self.__arrays.get(name)
+
+        if var is None:
+            var = self.__get_array_from_parent_scope(name)
+
+        return var
+
+    def __get_var_from_parent_Scope(self, name):
+        if self.__parent is None:
+            return None
+
+        var = self.__parent.get_var(name)
+
+        return var
+
+    def __get_array_from_parent_scope(self, name):
+        if self.__parent is None:
+            return None
+
+        array = self.__parent.get_array(name)
+
+        return array
+
+    def __get_var_name_from_parents(self, name):
+        if self.__parent is None:
+            return None
+
+        var_name = \
+            self.__parent.get_var_name(name)
+
+        return var_name
+
+    def __get_array_name_from_parents(self, name):
+        if self.__parent is None:
+            return None
+
+        array_name = \
+            self.__parent.get_array_name(name)
+
+        return array_name
+
+    def __var_accessible_in_parent_scope(self, name):
         if self.__parent is None:
             return False
 
-        if self.__parent.var_accessible_in_scope(name):
-            return True
+        return \
+            self.__parent.var_accessible_in_scope(name)
 
-        return False
+    def __array_accessible_in_parent_scope(self, name):
+        if self.__parent is None:
+            return None
+
+        return \
+            self.__parent.array_accessible_in_scope(name)
 
     def var_exist_in_scope(self, name):
-        if name in self.__vars_old_names.keys():
+        if name in self.__vars.keys() or \
+                name in self.__arrays.keys():
+
             return True
 
         return False
 
     def var_accessible_in_scope(self, name):
-        if self.__vars_old_names.get(name) is not None:
+        if self.__vars.get(self.get_var_name(name)) is not None:
             return True
 
-        elif self.__var_exist_in_parent_scope(name):
+        return \
+            self.__var_accessible_in_parent_scope(name)
+
+    def array_accessible_in_scope(self, name):
+        if self.__arrays.get(self.get_array_name(name)) is not None:
             return True
 
-        return False
+        return \
+            self.__array_accessible_in_parent_scope(name)
 
     def get_all_vars(self):
-        return self.__vars_old_names.values()
+        return self.__vars.values()
+
+    def get_all_arrays(self):
+        return self.__arrays.values()
+
+    def map_var_name_to_symbol_tabel_name(self, name):
+        new_name = Tables.get_instance().get_new_var_name()
+        self.__old_names[name] = new_name
+
+        return new_name

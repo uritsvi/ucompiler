@@ -1,0 +1,23 @@
+int_32 data[100];
+int_32 i;
+int_32 sum;
+
+while(i < 100)
+{
+    data[i] = i;
+
+    i = i + 1;
+}
+
+i = 0;
+
+while(i < 100)
+{
+    sum = sum + data[i];
+
+    i = i + 1;
+}
+
+sum = sum / 100;
+
+@print sum;

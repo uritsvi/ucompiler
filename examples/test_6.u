@@ -3,6 +3,7 @@ int_32 c = 5;
 
 if(c < 1)
 {
+    @exit 1;
     a = 6;
 }
 else

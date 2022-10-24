@@ -31,9 +31,6 @@ class AST_Integer(AST_Value):
     def get_value(self):
         return self.__value
 
-    def set_data_type(self, data_type):
-        self.__data_type = data_type
-
     def get_data_type(self):
         return self.__data_type
 
@@ -50,6 +47,40 @@ class AST_Variable(AST_Value):
         return self.__data_type
 
 
+class AST_Array:
+    def __init__(self, name, data_type):
+        self.__name = name
+        self.__data_type = data_type
+
+    def get_name(self):
+        return self.__name
+
+    def get_data_type(self):
+        return self.__data_type.get_data_type()
+
+    def get_size(self):
+        return self.__data_type.get_size()
+
+
+class AST_ArrayCell(AST_Value):
+    def __init__(self, array_name, index):
+        self.__array_name = array_name
+        self.__index = index
+        self.__data_type = self.__array_name.get_data_type()
+
+    def get_data_type(self):
+        return self.__data_type
+
+    def get_array_name(self):
+        return self.__array_name
+
+    def get_index(self):
+        return self.__index
+
+    def get_name(self):
+        return self.__array_name.get_name()
+
+
 class AST_NewVariable(AST_Node):
     def __init__(self, name):
         self.__name = name
@@ -63,6 +94,7 @@ class AST_Expression(AST_Value):
         self.__expression_1 = expression_1
         self.__operator = operator
         self.__expression_2 = expression_2
+        self.__data_type = None
 
     def get_expression_1(self):
         return self.__expression_1
@@ -74,7 +106,10 @@ class AST_Expression(AST_Value):
         return self.__expression_2
 
     def get_data_type(self):
-        pass
+        return self.__data_type
+
+    def set_data_type(self, data_type):
+        self.__data_type = data_type
 
 
 class AST_DefVar(AST_Node):
@@ -90,12 +125,12 @@ class AST_DefVar(AST_Node):
 
 
 class AST_Assignment(AST_Node):
-    def __init__(self, name, value):
-        self.__name = name
+    def __init__(self, dest, value):
+        self.__dest = dest
         self.__value = value
 
-    def get_name(self):
-        return self.__name
+    def get_dest(self):
+        return self.__dest
 
     def get_value(self):
         return self.__value
@@ -177,23 +212,23 @@ class AST_MathOperator(AST_Operator):
     pass
 
 
-class Add_Operator(AST_MathOperator):
+class AST_Add_Operator(AST_MathOperator):
     pass
 
 
-class Sub_Operator(AST_MathOperator):
+class AST_Sub_Operator(AST_MathOperator):
     pass
 
 
-class Mul_Operator(AST_MathOperator):
+class AST_Mul_Operator(AST_MathOperator):
     pass
 
 
-class Div_Operator(AST_MathOperator):
+class AST_Div_Operator(AST_MathOperator):
     pass
 
 
-class Remainder_Operator(AST_Operator):
+class AST_Remainder_Operator(AST_Operator):
     pass
 
 
@@ -201,40 +236,60 @@ class AST_ConditionOperator(AST_Operator):
     pass
 
 
-class LessOperatorAST(AST_ConditionOperator):
+class AST_LessOperatorAST(AST_ConditionOperator):
     pass
 
 
-class GreaterOperatorAST(AST_ConditionOperator):
+class AST_GreaterOperatorAST(AST_ConditionOperator):
     pass
 
 
-class EqualityOperatorAST(AST_ConditionOperator):
+class AST_EqualityOperatorAST(AST_ConditionOperator):
     pass
 
 
-class NotEqualsOperatorAST(AST_ConditionOperator):
+class AST_NotEqualsOperatorAST(AST_ConditionOperator):
     pass
 
 
-class AndOperator(AST_ConditionOperator):
+class AST_AndOperator(AST_ConditionOperator):
     pass
 
 
-class OrOperatorAST(AST_ConditionOperator):
+class AST_OrOperatorAST(AST_ConditionOperator):
     pass
+
+
+class AST_ReadLine(AST_Node):
+    def __init__(self, array_name, num_of_chars):
+        self.__array_name = array_name
+        self.__num_of_chars = num_of_chars
+
+    def get_array_name(self):
+        return self.__array_name
+
+    def get_num_of_chars(self):
+        return self.__num_of_chars
 
 
 class AST_Print(AST_Node):
-    def __init__(self, print_format, var_name):
-        self.__var_name = var_name
+    def __init__(self, print_format, value):
+        self.__value = value
         self.__print_format = print_format
 
-    def get_var_name(self):
-        return self.__var_name
+    def get_value(self):
+        return self.__value
 
     def get_print_format(self):
         return self.__print_format
+
+
+class AST_PrintArray(AST_Node):
+    def __init__(self, array_name):
+        self.__array_name = array_name
+
+    def get_array_name(self):
+        return self.__array_name
 
 
 class AST_PrintString(AST_Node):

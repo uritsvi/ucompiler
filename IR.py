@@ -1,3 +1,4 @@
+import DataTypes
 import Utils
 import SymbolTable
 
@@ -40,17 +41,17 @@ class IR_Interface:
         pass
 
 
-class FreeValue(IR_Interface):
+class IR_FreeValue(IR_Interface):
     def add_free_operation(self, current_basic_block):
         pass
 
 
-class FreeVariable(FreeValue):
+class IR_FreeVariable(IR_FreeValue):
     def __init__(self, name):
         self.__name = name
 
 
-class FreeTemp(FreeValue):
+class IR_FreeTemp(IR_FreeValue):
     def __init__(self, temp_value):
         self.__temp_value = temp_value
 
@@ -58,7 +59,7 @@ class FreeTemp(FreeValue):
         return self.__temp_value
 
 
-class FreeInteger(FreeValue):
+class IR_FreeInteger(IR_FreeValue):
     def __init__(self, integer):
         self.__integer = integer
 
@@ -80,7 +81,7 @@ class IR_Assignment(IR_Interface):
         self.__name = name
         self.__value = value
 
-    def get_var_name(self):
+    def get_dest(self):
         return self.__name
 
     def get_value(self):
@@ -102,7 +103,7 @@ class IR_AssignTemp(IR_Interface):
         return self.__value
 
     def add_free_operation(self, current_basic_block):
-        pass
+        self.__value.add_free_operation(current_basic_block)
 
 
 class IR_Operator(IR_Interface):
@@ -148,7 +149,7 @@ class IR_Integer(IR_Value):
         return self.__value
 
     def add_free_operation(self, current_basic_block):
-        current_basic_block.add_statement(FreeInteger(self.__value))
+        current_basic_block.add_statement(IR_FreeInteger(self.__value))
 
     def get_data_type(self):
         return self.__data_type
@@ -160,11 +161,14 @@ class IR_Variable(IR_Value):
         self.__name = name
         self.__data_type = data_type
 
+    def get_name(self):
+        return self.__name
+
     def get_value(self):
         return self.__name
 
     def add_free_operation(self, current_basic_block):
-        current_basic_block.add_statement(FreeVariable(self.__name))
+        current_basic_block.add_statement(IR_FreeVariable(self.__name))
 
     def get_data_type(self):
         return self.__data_type
@@ -185,13 +189,13 @@ class IR_TempValue(IR_Value):
         return self.__value
 
     def add_free_operation(self, current_basic_block):
-        current_basic_block.add_statement(FreeTemp(self))
+        current_basic_block.add_statement(IR_FreeTemp(self))
 
     def get_data_type(self):
         return self.__data_type
 
 
-class DefTemp(IR_Interface):
+class IR_DefTemp(IR_Interface):
     def __init__(self, data_type):
         self.__temp = IR_TempValue(data_type)
 
@@ -222,8 +226,7 @@ class IR_ValueOperation(IR_Interface):
         return self._src_temp
 
     def add_free_operation(self, current_basic_block):
-        self._dest_temp.add_free_operation(current_basic_block)
-        self._src_temp.add_free_operation(current_basic_block)
+        pass
 
 
 class IR_AddOperation(IR_ValueOperation):
@@ -265,8 +268,10 @@ class IR_Condition(IR_Interface):
         self.__expression_1.add_free_operation(current_basic_block)
         self.__expression_2.add_free_operation(current_basic_block)
 
+        self.__operator.add_free_operation(current_basic_block)
 
-class JumpBlock(IR_Interface):
+
+class IR_JumpBlock(IR_Interface):
 
     def __init__(self):
         self._label = None
@@ -298,7 +303,7 @@ class IR_IfStatement(IR_Interface):
         return self.__jump_to_else_part
 
 
-class JumpStatement(IR_Interface):
+class IR_JumpStatement(IR_Interface):
     def __init__(self):
         self.__label = None
 
@@ -312,23 +317,23 @@ class JumpStatement(IR_Interface):
         self.__label = label
 
 
-class Jump(JumpStatement):
+class IR_Jump(IR_JumpStatement):
     pass
 
 
-class JumpEquals(JumpStatement):
+class IR_JumpEquals(IR_JumpStatement):
     pass
 
 
-class JumpNotEquals(JumpStatement):
+class IR_JumpNotEquals(IR_JumpStatement):
     pass
 
 
-class JumpLess(JumpStatement):
+class IR_JumpLess(IR_JumpStatement):
     pass
 
 
-class JumpGreater(JumpStatement):
+class IR_JumpGreater(IR_JumpStatement):
     pass
 
 
@@ -430,10 +435,11 @@ class IR_Program:
         return self.__symbol_tabel
 
 
-class IR_Var:
-    def __init__(self, name, data_type):
+class IR_Array:
+    def __init__(self, name, data_type, size):
         self.__name = name
         self.__data_type = data_type
+        self.__size = size
 
     def get_name(self):
         return self.__name
@@ -441,22 +447,76 @@ class IR_Var:
     def get_data_type(self):
         return self.__data_type
 
+    def get_size(self):
+        return self.__size
+
+
+class IR_ArrayCell(IR_Value):
+    def __init__(self, ir_array, index):
+        self.__ir_array = ir_array
+        self.__index = index
+
+    def get_ir_array(self):
+        return self.__ir_array
+
+    def get_index(self):
+        return self.__index
+
+    def add_free_operation(self, current_basic_block):
+        self.__index.add_free_operation(current_basic_block)
+
+    def get_value(self):
+        pass
+
+    def get_data_type(self):
+        return self.__ir_array.get_data_type()
+
 
 class IR_Function_SymbolTabel:
 
     def __init__(self):
         self.__vars = {}
+        self.__arrays = {}
 
     def get_all_vars(self):
 
         for tabel in SymbolTable.Tables.get_instance().get_all_tables():
             for var in tabel.get_all_vars():
-                self.__vars[var.get_name()] = (IR_Var(var.get_name(), var.get_data_type()))
+                self.__vars[var.get_name()] = (IR_Variable(var.get_name(), var.get_data_type()))
 
         return self.__vars
 
-    def get_var(self, var_name):
-        return self.__vars.get(var_name)
+    def get_all_arrays(self):
+        for tabel in SymbolTable.Tables.get_instance().get_all_tables():
+            for symbol_Tabel_array in tabel.get_all_arrays():
+                self.__arrays[symbol_Tabel_array.get_name()] = (IR_Array(symbol_Tabel_array.get_name(),
+                                                                         symbol_Tabel_array.get_data_type(),
+                                                                         symbol_Tabel_array.get_size().get_value()))
+
+        return self.__arrays
+
+    def get_var_or_array(self, var_name):
+        var = self.__vars.get(var_name)
+
+        if var is None:
+            return self.__arrays.get(var_name)
+
+        return var
+
+
+class IR_ReadLine(IR_Interface):
+    def __init__(self, array_name, num_of_chars):
+        self.__array_name = array_name
+        self.__num_of_chars = num_of_chars
+
+    def get_array_name(self):
+        return self.__array_name
+
+    def get_num_of_chars(self):
+        return self.__num_of_chars
+
+    def add_free_operation(self, current_basic_block):
+        pass
 
 
 class IR_Print(IR_Interface):
@@ -469,6 +529,17 @@ class IR_Print(IR_Interface):
 
     def get_print_format(self):
         return self.__print_format
+
+    def add_free_operation(self, current_basic_block):
+        pass
+
+
+class IR_PrintArray(IR_Interface):
+    def __init__(self, array):
+        self.__array = array
+
+    def get_array_name(self):
+        return self.__array
 
     def add_free_operation(self, current_basic_block):
         pass
@@ -511,53 +582,98 @@ class IR_Generator(AST_Visitor):
     @visitor(AST_CodeBlock)
     def visit(self, code_block, context):
         for statement in code_block.get_all_statements():
+            if statement is None:
+                continue
+
             self.visit(statement, context)
 
     @visitor(AST_Integer)
     def visit(self, integer, context):
-        def_temp = DefTemp(integer.get_data_type())
-        temp = def_temp.get_temp()
-
         integer = IR_Integer(integer.get_value(), integer.get_data_type())
-        set_temp = IR_AssignTemp(temp, integer)
 
-        self.__main_function.get_current_basic_block().add_statement(def_temp)
-        self.__main_function.get_current_basic_block().add_statement(set_temp)
+        return integer
 
-        integer.add_free_operation(self.__main_function.get_current_basic_block())
+    @visitor(AST_ArrayCell)
+    def visit(self, get_value_from_array, context):
 
-        return temp
+        array = self.visit(get_value_from_array.get_array_name(), context)
+        index = self.visit(get_value_from_array.get_index(), context)
+
+        data_type_size_in_bites = \
+            IR_Integer(get_value_from_array.get_data_type().get_size_in_bites(),
+                       get_value_from_array.get_data_type)
+
+        def_index_temp = \
+            IR_DefTemp(DataTypes.int_32())
+
+        index_temp = def_index_temp.get_temp()
+
+        assign_index_temp = IR_AssignTemp(index_temp, index)
+
+        self.__main_function.get_current_basic_block().add_statement(def_index_temp)
+        self.__main_function.get_current_basic_block().add_statement(assign_index_temp)
+
+        # to get to the array cell you need to mul the index you want to
+        # access in the array by the size in bites of the array data type
+        mul_operation = IR_MulOperation()
+        mul_operation.set_temps(index_temp, data_type_size_in_bites)
+
+        assign_index_temp.add_free_operation(self.__main_function.get_current_basic_block())
+
+        self.__main_function.get_current_basic_block().add_statement(mul_operation)
+        mul_operation.add_free_operation(self.__main_function.get_current_basic_block())
+
+        array_cell = \
+            IR_ArrayCell(array, index_temp)
+
+        return array_cell
 
     @visitor(AST_Variable)
     def visit(self, variable, context):
-        def_temp = DefTemp(variable.get_data_type())
-        temp = def_temp.get_temp()
 
         variable = IR_Variable(variable.get_name(), variable.get_data_type())
-        set_temp = IR_AssignTemp(temp, variable)
 
-        self.__main_function.get_current_basic_block().add_statement(def_temp)
-        self.__main_function.get_current_basic_block().add_statement(set_temp)
+        return variable
 
-        variable.add_free_operation(self.__main_function.get_current_basic_block())
+    @visitor(AST_Array)
+    def visit(self, array, context):
+        array = IR_Array(array.get_name(), array.get_data_type(), array.get_size())
 
-        return temp
+        return array
 
     @visitor(AST_NewVariable)
     def visit(self, new_variable, context):
-        return new_variable.get_name()
+        return IR_Variable(new_variable.get_name(),
+                           SymbolTable.Tables.get_instance().get_current_table().
+                           get_var(new_variable.get_name()).get_data_type())
 
     @visitor(AST_Expression)
     def visit(self, expression, context):
-        dest_temp = self.visit(expression.get_expression_1(), context)
-        src_temp = self.visit(expression.get_expression_2(), context)
+        def_dest_temp = IR_DefTemp(expression.get_data_type())
+        def_src_temp = IR_DefTemp(expression.get_data_type())
+
+        dest_temp = def_dest_temp.get_temp()
+        src_temp = def_src_temp.get_temp()
+
+        assign_dest_temp = IR_AssignTemp(dest_temp, self.visit(expression.get_expression_1(), context))
+        assign_src_temp = IR_AssignTemp(src_temp, self.visit(expression.get_expression_2(), context))
 
         operation = self.visit(expression.get_operator(), context)
         operation.set_temps(dest_temp, src_temp)
 
+        self.__main_function.get_current_basic_block().add_statement(def_dest_temp)
+        self.__main_function.get_current_basic_block().add_statement(def_src_temp)
+
+        self.__main_function.get_current_basic_block().add_statement(assign_dest_temp)
+        assign_src_temp.add_free_operation(self.__main_function.get_current_basic_block())
+
+        self.__main_function.get_current_basic_block().add_statement(assign_src_temp)
+        assign_dest_temp.add_free_operation(self.__main_function.get_current_basic_block())
+
         self.__main_function.get_current_basic_block().add_statement(operation)
 
         src_temp.add_free_operation(self.__main_function.get_current_basic_block())
+        operation.add_free_operation(self.__main_function.get_current_basic_block())
 
         return dest_temp
 
@@ -567,53 +683,61 @@ class IR_Generator(AST_Visitor):
 
     @visitor(AST_Assignment)
     def visit(self, assignment, context):
-
         value = self.visit(assignment.get_value(), context)
+        dest = self.visit(assignment.get_dest(), context)
 
-        ir_assignment = IR_Assignment(assignment.get_name().get_name(), value)
+        def_temp = IR_DefTemp(value.get_data_type())
+        temp = def_temp.get_temp()
 
-        self.__main_function.get_current_basic_block().\
-            add_statement(ir_assignment)
+        assign_temp = IR_AssignTemp(temp, value)
 
+        ir_assignment = IR_Assignment(dest, temp)
+
+        self.__main_function.get_current_basic_block().add_statement(def_temp)
+        self.__main_function.get_current_basic_block().add_statement(assign_temp)
+        self.__main_function.get_current_basic_block().add_statement(ir_assignment)
+
+        temp.add_free_operation(self.__main_function.get_current_basic_block())
         value.add_free_operation(self.__main_function.get_current_basic_block())
+        dest.add_free_operation(self.__main_function.get_current_basic_block())
 
-    @visitor(Add_Operator)
+    @visitor(AST_Add_Operator)
     def visit(self, add_operator, context):
         return IR_AddOperation()
 
-    @visitor(Sub_Operator)
+    @visitor(AST_Sub_Operator)
     def visit(self, sub_operator, context):
         return IR_SUbOperation()
 
-    @visitor(Mul_Operator)
+    @visitor(AST_Mul_Operator)
     def visit(self, mul_operator, context):
         return IR_MulOperation()
 
-    @visitor(Div_Operator)
+    @visitor(AST_Div_Operator)
     def visit(self, dev_operator, context):
         return IR_DevOperation()
 
-    @visitor(Remainder_Operator)
+    @visitor(AST_Remainder_Operator)
     def visit(self, dev_res_operator, context):
         return IR_DevRestOperation()
 
-    @visitor(LessOperatorAST)
+    @visitor(AST_LessOperatorAST)
     def visit(self, less_operator, context):
-        return JumpLess()
+        return IR_JumpLess()
 
-    @visitor(GreaterOperatorAST)
+    @visitor(AST_GreaterOperatorAST)
     def visit(self, greater_operator, context):
-        return JumpGreater()
+        return IR_JumpGreater()
 
-    @visitor(EqualityOperatorAST)
+    @visitor(AST_EqualityOperatorAST)
     def visit(self, equality_operator, context):
-        return JumpEquals()
+        return IR_JumpEquals()
 
-    @visitor(NotEqualsOperatorAST)
+    @visitor(AST_NotEqualsOperatorAST)
     def visit(self, not_equals_operator, context):
-        return JumpNotEquals()
+        return IR_JumpNotEquals()
 
-    @visitor(AndOperator)
+    @visitor(AST_AndOperator)
     def visit(self, and_operator, context):
 
         condition = context.get_condition()
@@ -623,7 +747,7 @@ class IR_Generator(AST_Visitor):
         new_basic_block = IR_BasicBlock(new_basic_block_label,
                                         self.__main_function.get_current_basic_block().get_jump_block())
 
-        jump_to_else_part = Jump()
+        jump_to_else_part = IR_Jump()
 
         jump_to_else_part.set_label(context.get_if_statement_labels().get_else_part_label())
 
@@ -643,7 +767,7 @@ class IR_Generator(AST_Visitor):
         self.__main_function.add_basic_block(new_basic_block)
         self.__main_function.push_current_basic_block(new_basic_block)
 
-    @visitor(OrOperatorAST)
+    @visitor(AST_OrOperatorAST)
     def visit(self, or_condition, context):
 
         condition = context.get_condition()
@@ -653,7 +777,7 @@ class IR_Generator(AST_Visitor):
         new_basic_block = IR_BasicBlock(new_basic_block_label,
                                         self.__main_function.get_current_basic_block().get_jump_block())
 
-        jump_to_else_part = Jump()
+        jump_to_else_part = IR_Jump()
         jump_to_else_part.set_label(new_basic_block_label)
 
         jump_to_than_part = \
@@ -692,7 +816,7 @@ class IR_Generator(AST_Visitor):
         jump_to_than_part = condition.get_operator()
         jump_to_than_part.set_label(than_part_label)
 
-        jump_to_else_part = Jump()
+        jump_to_else_part = IR_Jump()
         jump_to_else_part.set_label(else_part_label)
 
         if contains_else_part:
@@ -700,7 +824,7 @@ class IR_Generator(AST_Visitor):
         else:
             merge_block_label = else_part_label
 
-        jump_to_merge_block = Jump()
+        jump_to_merge_block = IR_Jump()
         jump_to_merge_block.set_label(merge_block_label)
 
         than_part = IR_BasicBlock(than_part_label, jump_to_merge_block)
@@ -750,7 +874,7 @@ class IR_Generator(AST_Visitor):
         cmp_block_label = IR_Label(self.__labels.get_new_label_name())
         cmp_block = IR_BasicBlock(cmp_block_label, last_jump_block)
 
-        jump_to_cmp_block = Jump()
+        jump_to_cmp_block = IR_Jump()
         jump_to_cmp_block.set_label(cmp_block_label)
 
         self.__main_function.get_current_basic_block().set_jump_block(jump_to_cmp_block)
@@ -768,7 +892,7 @@ class IR_Generator(AST_Visitor):
         jump_to_than_part = condition.get_operator()
         jump_to_than_part.set_label(than_part_label)
 
-        jump_to_merge_block = Jump()
+        jump_to_merge_block = IR_Jump()
         jump_to_merge_block.set_label(merge_block_label)
 
         than_part = IR_BasicBlock(than_part_label, jump_to_cmp_block)
@@ -798,13 +922,34 @@ class IR_Generator(AST_Visitor):
 
     @visitor(AST_Condition)
     def visit(self, condition, context):
+        def_temp = IR_DefTemp(condition.get_expression_1().get_data_type())
+        temp_1 = def_temp.get_temp()
+
         expression_1 = self.visit(condition.get_expression_1(), context)
+
+        assign_temp = IR_AssignTemp(temp_1, expression_1)
+
+        self.__main_function.get_current_basic_block().add_statement(def_temp)
+        self.__main_function.get_current_basic_block().add_statement(assign_temp)
+
+        expression_1.add_free_operation(self.__main_function.get_current_basic_block())
+
+        def_temp = IR_DefTemp(condition.get_expression_1().get_data_type())
+        temp_2 = def_temp.get_temp()
+
         expression_2 = self.visit(condition.get_expression_2(), context)
+
+        assign_temp = IR_AssignTemp(temp_2, expression_2)
+
+        self.__main_function.get_current_basic_block().add_statement(def_temp)
+        self.__main_function.get_current_basic_block().add_statement(assign_temp)
+
+        expression_2.add_free_operation(self.__main_function.get_current_basic_block())
 
         operator = self.visit(condition.get_operator(), context)
 
         ir_condition = \
-            IR_Condition(expression_1, operator, expression_2)
+            IR_Condition(temp_1, operator, temp_2)
 
         return ir_condition
 
@@ -819,10 +964,25 @@ class IR_Generator(AST_Visitor):
         condition_2 = self.visit(condition.get_condition_2(), context)
         return condition_2
 
+    @visitor(AST_ReadLine)
+    def visit(self, read_line_statement, context):
+        ir_read_line = \
+            IR_ReadLine(read_line_statement.get_array_name(),
+                        self.visit(read_line_statement.get_num_of_chars(), context))
+
+        self.__main_function.get_current_basic_block().add_statement(ir_read_line)
+
     @visitor(AST_Print)
     def visit(self, print_statement, context):
         ir_print = IR_Print(print_statement.get_print_format(),
-                            print_statement.get_var_name())
+                            self.visit(print_statement.get_value(), context))
+
+        self.__main_function.get_current_basic_block().add_statement(ir_print)
+
+    @visitor(AST_PrintArray)
+    def visit(self, print_array, context):
+        ir_print = \
+            IR_PrintArray(print_array.get_array_name())
 
         self.__main_function.get_current_basic_block().add_statement(ir_print)
 

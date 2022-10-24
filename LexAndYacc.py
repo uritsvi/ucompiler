@@ -1,6 +1,7 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
+import Constance
 import DataTypes
 import Utils
 import SymbolTable
@@ -19,7 +20,10 @@ tokens = ('int_32_keyword',
           'open_curly_brackets',
           'close_curly_brackets',
 
-          'number',
+          'open_brackets',
+          'close_brackets',
+
+          'int_32_value',
           'char_value',
           'string',
 
@@ -42,9 +46,15 @@ tokens = ('int_32_keyword',
           'or_operator',
 
           'print',
+          'print_array',
+
+          'read_line',
+
           'exit',
 
           'semicolon',
+          'comma',
+
           'new_line')
 
 
@@ -56,11 +66,17 @@ def t_new_line(t):
 
 def t_int_32_keyword(t):
     r"""int_32"""
+
+    t.value = DataTypes.int_32()
+
     return t
 
 
 def t_char_keyword(t):
     r"""char"""
+
+    t.value = DataTypes.char()
+
     return t
 
 
@@ -79,8 +95,18 @@ def t_while_keyword(t):
     return t
 
 
+def t_print_array(t):
+    r"""@print_array"""
+    return t
+
+
 def t_print(t):
     r"""@print"""
+    return t
+
+
+def t_read_line(t):
+    r"""@read_line"""
     return t
 
 
@@ -95,6 +121,9 @@ t_close_parenthesise = r'\)'
 t_open_curly_brackets = r'\{'
 t_close_curly_brackets = r'\}'
 
+t_open_brackets = r'\['
+t_close_brackets = r'\]'
+
 
 def t_string(t):
     r"""\".+\""""
@@ -107,15 +136,27 @@ def t_string(t):
 def t_char_value(t):
     r"""'.'"""
 
-    t.value = t.value.split("'", 2)[1]
+    value = t.value.split("'", 2)
+    value = value[1]
+
+    AST_Integer = AST.AST_Integer(ord(value), DataTypes.char())
+    t.value = AST_Integer
 
     return t
 
 
-t_number = r'\d+'
+def t_int_32_value(t):
+    r"""\d+"""
+
+    AST_Integer = AST.AST_Integer(t.value, DataTypes.int_32())
+    t.value = AST_Integer
+
+    return t
+
 
 t_name = r'\w+'
 
+t_comma = r','
 t_semicolon = r';'
 
 t_equals_operator = r'='
@@ -179,8 +220,10 @@ def p_statement(p):
 
 def p_basic_block_command(p):
     """basic_block_command : def_var semicolon
+                             | def_array semicolon
                              | int_assignment semicolon
                              | print_statement semicolon
+                             | read_line_statement semicolon
                              | exit_statement semicolon"""
 
     p[0] = p[1]
@@ -242,14 +285,14 @@ def p_complex_condition(p):
 def p_or_condition(p):
     """or_condition : condition or_operator simple_condition"""
 
-    AST_condition = AST.AST_ComplexCondition(p[1], AST.OrOperatorAST(), p[3])
+    AST_condition = AST.AST_ComplexCondition(p[1], AST.AST_OrOperatorAST(), p[3])
     p[0] = AST_condition
 
 
 def p_and_condition(p):
     """and_condition : condition and_operator simple_condition"""
 
-    AST_condition = AST.AST_ComplexCondition(p[1], AST.AndOperator(), p[3])
+    AST_condition = AST.AST_ComplexCondition(p[1], AST.AST_AndOperator(), p[3])
     p[0] = AST_condition
 
 
@@ -262,27 +305,27 @@ def p_condition_in_parenthesise(p):
 def p_les_condition(p):
     """les_condition : expression less_operator expression"""
 
-    AST_Condition = AST.AST_Condition(p[1], AST.LessOperatorAST(), p[3])
+    AST_Condition = AST.AST_Condition(p[1], AST.AST_LessOperatorAST(), p[3])
     p[0] = AST_Condition
 
 
 def p_greater_condition(p):
     """grater_condition : expression greater_operator expression"""
 
-    AST_Condition = AST.AST_Condition(p[1], AST.GreaterOperatorAST(), p[3])
+    AST_Condition = AST.AST_Condition(p[1], AST.AST_GreaterOperatorAST(), p[3])
     p[0] = AST_Condition
 
 
 def p_equality_condition(p):
     """equality_condition : expression equality_operator expression"""
 
-    AST_Condition = AST.AST_Condition(p[1], AST.EqualityOperatorAST(), p[3])
+    AST_Condition = AST.AST_Condition(p[1], AST.AST_EqualityOperatorAST(), p[3])
     p[0] = AST_Condition
 
 
 def p_not_equals_condition(p):
     """not_equals_condition : expression not_equals_operator expression"""
-    AST_Condition = AST.AST_Condition(p[1], AST.NotEqualsOperatorAST(), p[3])
+    AST_Condition = AST.AST_Condition(p[1], AST.AST_NotEqualsOperatorAST(), p[3])
     p[0] = AST_Condition
 
 
@@ -312,21 +355,25 @@ def p_while_statement(p):
     p[0] = AST_while_statement
 
 
-def p_def_var(p):
-    """def_var : def_int
-               | def_char"""
+def p_data_type(p):
+    """data_type : int_32_keyword
+                   | char_keyword"""
+
     p[0] = p[1]
 
 
-def p_def_int(p):
-    """def_int : int_32_keyword new_var_name
-                 | int_32_keyword new_var_name equals_operator value"""
+def p_def_var(p):
+    """def_var : data_type new_var_name
+                 | data_type new_var_name equals_operator value"""
+
+    data_type = p[1]
+    new_var = p[2]
 
     SymbolTable.Tables.get_instance().get_current_table().\
-        set_var_data_type(p[2].get_name(), DataTypes.int_32())
+        add_var(new_var.get_name(), data_type)
 
     if len(p) == 3:
-        AST_assignment = AST.AST_Assignment(p[2], AST.AST_Integer(0, DataTypes.int_32()))
+        AST_assignment = AST.AST_Assignment(new_var, AST.AST_Integer(0, data_type))
         AST_def_var = AST.AST_DefVar(p[2], AST_assignment)
     else:
         AST_assignment = AST.AST_Assignment(p[2], p[4])
@@ -335,47 +382,73 @@ def p_def_int(p):
     p[0] = AST_def_var
 
 
-def p_def_char(p):
-    """def_char : char_keyword new_var_name
-                  | char_keyword new_var_name equals_operator value"""
+def p_def_array(p):
+    """def_array : data_type new_var_name open_brackets simple_int_value close_brackets"""
+
+    array_len = p[4]
+
+    if int(array_len.get_value()) > Constance.MAX_ARRAY_SIZE:
+        Utils.Utils.handle_compiler_error("Try's to define an array of size greater than" + " " +
+                                          str(Constance.MAX_ARRAY_SIZE) + " " + "in line" + " " + str(p.lexer.lineno))
+        return
+
+    data_type = p[1]
+    new_var = p[2]
+
+    data_type = DataTypes.Array(data_type, array_len)
 
     SymbolTable.Tables.get_instance().get_current_table().\
-        set_var_data_type(p[2].get_name(), DataTypes.char())
+        add_array(new_var.get_name(), data_type)
 
-    if len(p) == 3:
-        AST_assignment = AST.AST_Assignment(p[2], AST.AST_Integer(0, DataTypes.char()))
-        AST_def_var = AST.AST_DefVar(p[2], AST_assignment)
-    else:
-        AST_assignment = AST.AST_Assignment(p[2], p[4])
-        AST_def_var = AST.AST_DefVar(p[2], AST_assignment)
 
-    p[0] = AST_def_var
+def p_array_cell(p):
+    """array_cell : array_name open_brackets value close_brackets"""
+
+    array_name = p[1]
+    index = p[3]
+
+    AST_ArrayCell = \
+        AST.AST_ArrayCell(array_name, index)
+
+    p[0] = AST_ArrayCell
 
 
 def p_int_assignment(p):
-    """int_assignment : var_name equals_operator expression"""
+    """int_assignment : dest_var equals_operator value"""
 
     AST_assignment = AST.AST_Assignment(p[1], p[3])
     p[0] = AST_assignment
 
 
-def p_value(p):
-    """value : int_expression
-               | char_int_value"""
+def p_simple_int_value(p):
+    """simple_int_value : int_32_value
+                          | char_value"""
 
     p[0] = p[1]
 
 
-def p_char_int_value(p):
-    """char_int_value : char_value"""
+def p_int_value(p):
+    """int_value : int_expression"""
 
-    AST_Integer = AST.AST_Integer(ord(p[1]), DataTypes.char())
-    p[0] = AST_Integer
+    p[0] = p[1]
+
+
+def p_dest_var(p):
+    """dest_var : var_name
+                  | array_cell"""
+
+    p[0] = p[1]
+
+
+def p_value(p):
+    """value : int_value"""
+
+    p[0] = p[1]
 
 
 def p_int_expression(p):
-    """int_expression : int_value
-                        | char_int_value
+    """int_expression :  simple_int_value
+                        | array_cell
                         | int_expression_in_parenthesise
                         | var_name
                         | add_expression
@@ -402,36 +475,46 @@ def p_int_expression_in_parenthesise(p):
 def p_add_expression(p):
     """add_expression : expression add_operator expression"""
 
-    AST_AddExpression = AST.AST_Expression(p[1], AST.Add_Operator(), p[3])
+    AST_AddExpression = AST.AST_Expression(p[1], AST.AST_Add_Operator(), p[3])
     p[0] = AST_AddExpression
+
+    p[0].set_data_type(p[1].get_data_type())
 
 
 def p_sub_expression(p):
     """sub_expression : expression sub_operator expression"""
 
-    AST_SubExpression = AST.AST_Expression(p[1], AST.Sub_Operator(), p[3])
+    AST_SubExpression = AST.AST_Expression(p[1], AST.AST_Sub_Operator(), p[3])
     p[0] = AST_SubExpression
+
+    p[0].set_data_type(p[1].get_data_type())
 
 
 def p_mul_expression(p):
     """mul_expression : expression mul_operator expression"""
 
-    AST_MulExpression = AST.AST_Expression(p[1], AST.Mul_Operator(), p[3])
+    AST_MulExpression = AST.AST_Expression(p[1], AST.AST_Mul_Operator(), p[3])
     p[0] = AST_MulExpression
+
+    p[0].set_data_type(p[1].get_data_type())
 
 
 def p_dev_expression(p):
     """dev_expression : expression dev_operator expression"""
 
-    AST_DevExpression = AST.AST_Expression(p[1], AST.Div_Operator(), p[3])
+    AST_DevExpression = AST.AST_Expression(p[1], AST.AST_Div_Operator(), p[3])
     p[0] = AST_DevExpression
+
+    p[0].set_data_type(p[1].get_data_type())
 
 
 def p_dev_rest_expression(p):
     """dev_rest_expression : expression dev_rest_operator expression"""
 
-    AST_DevRestExpression = AST.AST_Expression(p[1], AST.Remainder_Operator(), p[3])
+    AST_DevRestExpression = AST.AST_Expression(p[1], AST.AST_Remainder_Operator(), p[3])
     p[0] = AST_DevRestExpression
+
+    p[0].set_data_type(p[1].get_data_type())
 
 
 def p_var_name(p):
@@ -443,14 +526,35 @@ def p_var_name(p):
     if not res:
         Utils.Utils.handle_compiler_error("Var " + p[1] + " dose not exist in current scope")
         return
+    else:
+        var_name = \
+            SymbolTable.Tables.get_instance().get_current_table().get_var_name(p[1])
 
-    var_name = \
-        SymbolTable.Tables.get_instance().get_current_table().get_var_name(p[1])
+        var_data_type = \
+            SymbolTable.Tables.get_instance().get_current_table().get_var(var_name)
 
-    var = \
-        SymbolTable.Tables.get_instance().get_current_table().get_var(var_name)
+    AST_var = AST.AST_Variable(var_name, var_data_type.get_data_type())
+    p[0] = AST_var
 
-    AST_var = AST.AST_Variable(var_name, var.get_data_type())
+
+def p_array_name(p):
+    """array_name : name"""
+
+    res = SymbolTable.Tables.get_instance().\
+        get_current_table().array_accessible_in_scope(p[1])
+
+    if not res:
+        Utils.Utils.handle_compiler_error("Array " + p[1] + " dose not exist in current scope")
+        return
+
+    else:
+        var_name = \
+            SymbolTable.Tables.get_instance().get_current_table().get_var_name(p[1])
+
+        var_data_type = \
+            SymbolTable.Tables.get_instance().get_current_table().get_array(var_name)
+
+    AST_var = AST.AST_Array(var_name, var_data_type)
     p[0] = AST_var
 
 
@@ -465,17 +569,10 @@ def p_new_var_name(p):
         return
 
     var_name = \
-        SymbolTable.Tables.get_instance().get_current_table().add_var(p[1])
+        SymbolTable.Tables.get_instance().get_current_table().map_var_name_to_symbol_tabel_name(p[1])
 
     AST_new_var = AST.AST_NewVariable(var_name)
     p[0] = AST_new_var
-
-
-def p_int_value(p):
-    """int_value : number"""
-
-    AST_Int = AST.AST_Integer(p[1], DataTypes.int_32())
-    p[0] = AST_Int
 
 
 def p_exit(p):
@@ -485,28 +582,41 @@ def p_exit(p):
     p[0] = AST_ExitStatement
 
 
+def p_read_line_statement(p):
+    """read_line_statement : read_line array_name comma simple_int_value"""
+
+    p[0] = AST.AST_ReadLine(p[2].get_name(), p[4])
+
+
 def p_print_statement(p):
-    """print_statement : print_var
-                         | print_string"""
+    """print_statement : print_value_statement
+                         | print_string_statement
+                         | print_array_statement"""
 
     p[0] = p[1]
 
 
-def p_print_var(p):
-    """print_var : print var_name"""
+def p_print_array(p):
+    """print_array_statement : print_array array_name"""
 
-    p[0] = AST.AST_Print(SymbolTable.Tables.get_instance().
-                         get_current_table().get_var(p[2].get_name()).get_data_type().get_print_format(), p[2])
+    p[0] = AST.AST_PrintArray(p[2].get_name())
+
+
+def p_print_value(p):
+    """print_value_statement : print value"""
+
+    p[0] = AST.AST_Print(p[2].get_data_type().get_print_format(), p[2])
 
 
 def p_print_string(p):
-    """print_string : print string"""
+    """print_string_statement : print string"""
 
     p[0] = AST.AST_PrintString(p[2])
 
 
 def p_error(p):
-    Utils.Utils.handle_compiler_error("Failed to parse tokens in line" + " " + str(p.lineno - 1) + " " + "token" + " " + "\"" + p.value + "\"")
+    Utils.Utils.handle_compiler_error("Failed to parse tokens in line" + " " +
+                                      str(p.lineno) + " " + "token" + " " + "\"" + p.value + "\"")
 
     p[0] = None
 

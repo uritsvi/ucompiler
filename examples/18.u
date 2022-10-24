@@ -1,0 +1,19 @@
+int_32 i;
+int_32 n = 9;
+int_32 p;
+
+int_32 prime[10];
+
+while(i < n + 1)
+{
+    prime[i] = 1;
+    i = i + 1;
+}
+
+i = 2;
+while(i < n + 1)
+{
+
+    @print i;
+    i = i + 1;
+}

@@ -1,0 +1,19 @@
+int_32 data[4];
+
+data[0] = 2;
+data[1] = 4;
+data[2] = 6;
+data[3] = 8;
+
+int_32 sum;
+int_32 i;
+while(i < 4)
+{
+    sum = sum + data[i];
+    i = i + 1;
+}
+
+sum = sum / 4;
+
+@print sum;
+

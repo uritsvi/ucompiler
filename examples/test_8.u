@@ -5,3 +5,7 @@ if(a != b)
 {
     @print "hello!";
 }
+else
+{
+    @exit 1;
+}

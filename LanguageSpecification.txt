@@ -7,6 +7,12 @@ Def var:
 Example:
 int_32 a;
 
+Def array:
+Example:
+int_32 a[10];
+
+The max size of array can by 1000
+
 All variables can be declared anywhere in the program.
 Variables not in the same scope can have the same name
 Var can be accessed in his scope and in any other child scope(scope inside the scope).
@@ -14,6 +20,7 @@ Var can be accessed in his scope and in any other child scope(scope inside the s
 Assignment:
 Example:
 a = 10;
+a[3] = 10;
 
 Assign the var value
 
@@ -62,6 +69,18 @@ Example:
 @print "hello world\n";
 
 Print's a string to the standard output
+
+7. print array:
+Example:
+@print_array a;
+
+Print's the array as a string
+
+8. read line
+Example:
+@read_line a;
+
+Reads user input into an array
 
 8. exit statement
 Example:

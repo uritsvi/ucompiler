@@ -27,6 +27,9 @@ class AST_XML_Program(AST_Visitor):
         xml_object = self.create_element("code block")
 
         for statement in statements:
+            if statement is None:
+                continue
+
             xml_object.appendChild(self.visit(statement, None))
 
         return xml_object
@@ -37,6 +40,15 @@ class AST_XML_Program(AST_Visitor):
         integer_object = self.create_element("integer:" + str(integer.get_value()))
 
         xml_object.appendChild(integer_object)
+
+        return xml_object
+
+    @visitor(AST_ArrayCell)
+    def visit(self, get_value_from_array, context):
+        xml_object = self.create_element("array cell")
+
+        index = self.visit(get_value_from_array.get_index(), context)
+        xml_object.appendChild(index)
 
         return xml_object
 
@@ -81,62 +93,62 @@ class AST_XML_Program(AST_Visitor):
     def visit(self, assignment, context):
         xml_object = self.create_element("assignment")
 
-        xml_object.appendChild(self.visit(assignment.get_name(), None))
+        xml_object.appendChild(self.visit(assignment.get_dest(), None))
         xml_object.appendChild(self.visit(assignment.get_value(), None))
 
         return xml_object
 
-    @visitor(Add_Operator)
+    @visitor(AST_Add_Operator)
     def visit(self, add_operator, context):
         xml_object = self.create_element("add operator")
         return xml_object
 
-    @visitor(Sub_Operator)
+    @visitor(AST_Sub_Operator)
     def visit(self, sub_operator, context):
         xml_object = self.create_element("sub operator")
         return xml_object
 
-    @visitor(Mul_Operator)
+    @visitor(AST_Mul_Operator)
     def visit(self, mul_operator, context):
         xml_object = self.create_element("mul operator")
         return xml_object
 
-    @visitor(Div_Operator)
+    @visitor(AST_Div_Operator)
     def visit(self, dev_operator, context):
         xml_object = self.create_element("dev operator")
         return xml_object
 
-    @visitor(Remainder_Operator)
+    @visitor(AST_Remainder_Operator)
     def visit(self, dev_res_operator, context):
         xml_object = self.create_element("dev res operator")
         return xml_object
 
-    @visitor(LessOperatorAST)
+    @visitor(AST_LessOperatorAST)
     def visit(self, less_operator, context):
         xml_object = self.create_element("less operator")
         return xml_object
 
-    @visitor(GreaterOperatorAST)
+    @visitor(AST_GreaterOperatorAST)
     def visit(self, greater_operator, context):
         xml_object = self.create_element("greater operator")
         return xml_object
 
-    @visitor(EqualityOperatorAST)
+    @visitor(AST_EqualityOperatorAST)
     def visit(self, equality_operator, context):
         xml_object = self.create_element("equality operator")
         return xml_object
 
-    @visitor(NotEqualsOperatorAST)
+    @visitor(AST_NotEqualsOperatorAST)
     def visit(self, not_equals_operator, context):
         xml_object = self.create_element("not equals operator")
         return xml_object
 
-    @visitor(AndOperator)
+    @visitor(AST_AndOperator)
     def visit(self, and_operator, context):
         xml_object = self.create_element("and operator")
         return xml_object
 
-    @visitor(OrOperatorAST)
+    @visitor(AST_OrOperatorAST)
     def visit(self, and_operator, context):
         xml_object = self.create_element("or operator")
         return xml_object
@@ -189,16 +201,29 @@ class AST_XML_Program(AST_Visitor):
 
         return xml_object
 
+    @abstractmethod
+    @visitor(AST_ReadLine)
+    def visit(self, read_line_statement, context):
+        xml_object = self.create_element("read line")
+
+        return xml_object
+
     @visitor(AST_Print)
     def visit(self, print_statement, context):
         xml_object = self.create_element("print")
-        self.visit(print_statement.get_var_name(), None)
+        self.visit(print_statement.get_value(), None)
 
         return xml_object
 
     @visitor(AST_PrintString)
     def visit(self, print_statement, context):
         xml_object = self.create_element("print string")
+
+        return xml_object
+
+    @visitor(AST_PrintArray)
+    def visit(self, print_array, context):
+        xml_object = self.create_element("print array")
 
         return xml_object
 

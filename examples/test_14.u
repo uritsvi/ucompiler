@@ -1,0 +1,11 @@
+int_32 a = 10;
+char b = 'r';
+
+if(a + b < 1000)
+{
+    @print "good\n";
+}
+else
+{
+    @exit 1;
+}

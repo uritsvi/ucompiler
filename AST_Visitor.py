@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from AST import *
 
 AST_visitor_methods = {}
@@ -45,8 +44,18 @@ class AST_Visitor:
         pass
 
     @abstractmethod
+    @visitor(AST_ArrayCell)
+    def visit(self, get_value_from_array, context):
+        pass
+
+    @abstractmethod
     @visitor(AST_Variable)
     def visit(self, variable, context):
+        pass
+
+    @abstractmethod
+    @visitor(AST_Array)
+    def visit(self, array, context):
         pass
 
     @abstractmethod
@@ -70,47 +79,47 @@ class AST_Visitor:
         pass
 
     @abstractmethod
-    @visitor(Add_Operator)
+    @visitor(AST_Add_Operator)
     def visit(self, add_operator, context):
         pass
 
     @abstractmethod
-    @visitor(Sub_Operator)
+    @visitor(AST_Sub_Operator)
     def visit(self, sub_operator, context):
         pass
 
     @abstractmethod
-    @visitor(Mul_Operator)
+    @visitor(AST_Mul_Operator)
     def visit(self, mul_operator, context):
         pass
 
     @abstractmethod
-    @visitor(Div_Operator)
+    @visitor(AST_Div_Operator)
     def visit(self, dev_operator, context):
         pass
 
     @abstractmethod
-    @visitor(Remainder_Operator)
+    @visitor(AST_Remainder_Operator)
     def visit(self, dev_res_operator, context):
         pass
 
     @abstractmethod
-    @visitor(LessOperatorAST)
+    @visitor(AST_LessOperatorAST)
     def visit(self, less_operator, context):
         pass
 
     @abstractmethod
-    @visitor(GreaterOperatorAST)
+    @visitor(AST_GreaterOperatorAST)
     def visit(self, greater_operator, context):
         pass
 
     @abstractmethod
-    @visitor(LessOperatorAST)
+    @visitor(AST_LessOperatorAST)
     def visit(self, equality_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AndOperator)
+    @visitor(AST_AndOperator)
     def visit(self, and_operator, context):
         pass
 
@@ -140,8 +149,18 @@ class AST_Visitor:
         pass
 
     @abstractmethod
+    @visitor(AST_ReadLine)
+    def visit(self, read_line_statement, context):
+        pass
+
+    @abstractmethod
     @visitor(AST_Print)
     def visit(self, print_statement, context):
+        pass
+
+    @abstractmethod
+    @visitor(AST_PrintArray)
+    def visit(self, print_array, context):
         pass
 
     @abstractmethod
@@ -153,4 +172,3 @@ class AST_Visitor:
     @visitor(AST_Exit)
     def visit(self, exit_statement, context):
         pass
-

@@ -42,22 +42,22 @@ class IR_Writer:
         pass
 
     @abstractmethod
-    @writer(IR.FreeVariable)
+    @writer(IR.IR_FreeVariable)
     def write(self, free_variable, context):
         pass
 
     @abstractmethod
-    @writer(IR.FreeInteger)
+    @writer(IR.IR_FreeInteger)
     def write(self, free_integer, context):
         pass
 
     @abstractmethod
-    @writer(IR.FreeTemp)
+    @writer(IR.IR_FreeTemp)
     def write(self, free_temp, context):
         pass
 
     @abstractmethod
-    @writer(IR.DefTemp)
+    @writer(IR.IR_DefTemp)
     def write(self, def_temp, context):
         pass
 
@@ -69,6 +69,10 @@ class IR_Writer:
     @abstractmethod
     @writer(IR.IR_AssignTemp)
     def write(self, assign_temp, context):
+        pass
+
+    @writer(IR.IR_ArrayCell)
+    def write(self, get_value_from_array, context):
         pass
 
     @abstractmethod
@@ -122,27 +126,27 @@ class IR_Writer:
         pass
 
     @abstractmethod
-    @writer(IR.JumpStatement)
+    @writer(IR.IR_JumpStatement)
     def write(self, jump_statement, context):
         pass
 
     @abstractmethod
-    @writer(IR.JumpLess)
+    @writer(IR.IR_JumpLess)
     def write(self, jump_less, context):
         pass
 
     @abstractmethod
-    @writer(IR.JumpGreater)
+    @writer(IR.IR_JumpGreater)
     def write(self, jump_greater, context):
         pass
 
     @abstractmethod
-    @writer(IR.JumpEquals)
+    @writer(IR.IR_JumpEquals)
     def write(self, jump_equals, context):
         pass
 
     @abstractmethod
-    @writer(IR.JumpNotEquals)
+    @writer(IR.IR_JumpNotEquals)
     def write(self, jump_not_equals, context):
         pass
 
@@ -157,8 +161,18 @@ class IR_Writer:
         pass
 
     @abstractmethod
+    @writer(IR.IR_ReadLine)
+    def write(self, ir_read_line, context):
+        pass
+
+    @abstractmethod
     @writer(IR.IR_Print)
     def write(self, print_statement, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_PrintArray)
+    def write(self, print_array, context):
         pass
 
     @abstractmethod

@@ -21,6 +21,8 @@ class RegistersType(Enum):
     cl = 6,
     dl = 7
 
+    esi = 8
+
 
 class Register:
 
@@ -109,6 +111,9 @@ class Registers:
         self.__free_registers.append(register)
 
     def get_register_class(self, register_type):
+        if register_type is None:
+            print()
+
         return self.__all_full_registers[register_type]
 
 
@@ -179,6 +184,11 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     @classmethod
     def __write_def_var(cls, name, data_type):
         string = "LOCAL" + " " + name + ":" + data_type
+        return string
+
+    @classmethod
+    def __write_def_array(cls, name, data_type, size):
+        string = "LOCAL" + " " + name + "[" + str(size) + "]" + ":" + data_type
         return string
 
     @classmethod
@@ -257,8 +267,18 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         return string
 
     @classmethod
+    def __write_read_line(cls, array_name, num_of_chars):
+        string = "invoke StdIn" + "," + " " + "addr" + " " + array_name + "," + str(num_of_chars)
+        return string
+
+    @classmethod
     def __write_print(cls, print_format, var_name):
         string = "printf" + "(" + print_format + "," + var_name + ")"
+        return string
+
+    @classmethod
+    def __write_print_array(cls, array_name):
+        string = "printf" + "(" + "\"%s\\n\"" + "," + "addr" + " " + array_name + ")"
         return string
 
     @classmethod
@@ -269,6 +289,13 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     @classmethod
     def __write_exit(cls, exit_code):
         string = "invoke ExitProcess" + "," + str(exit_code)
+        return string
+
+    @classmethod
+    def __write_array_cell(cls, array_name, index):
+        string = \
+            array_name + "[" + str(index) + "]"
+
         return string
 
     @writer(IR.IR_Label)
@@ -282,44 +309,68 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     def write(self, symbol_table, context):
         string = ""
 
-        vars = symbol_table.get_all_vars()
+        symbol_tabel_vars = symbol_table.get_all_vars()
 
-        vars[self.__div_temp_1] = (SymbolTable.Var(self.__div_temp_1, DataTypes.int_32()))
-        vars[self.__div_temp_2] = (SymbolTable.Var(self.__div_temp_2, DataTypes.int_32()))
-        vars[self.__div_temp_3] = (SymbolTable.Var(self.__div_temp_3, DataTypes.int_32()))
-        vars[self.__div_temp_RES] = (SymbolTable.Var(self.__div_temp_RES, DataTypes.int_32()))
+        symbol_tabel_vars[self.__div_temp_1] = (SymbolTable.Var(self.__div_temp_1, DataTypes.int_32()))
+        symbol_tabel_vars[self.__div_temp_2] = (SymbolTable.Var(self.__div_temp_2, DataTypes.int_32()))
+        symbol_tabel_vars[self.__div_temp_3] = (SymbolTable.Var(self.__div_temp_3, DataTypes.int_32()))
+        symbol_tabel_vars[self.__div_temp_RES] = (SymbolTable.Var(self.__div_temp_RES, DataTypes.int_32()))
 
-        for var in vars.values():
-            string += self.__write_def_var(var.get_name(), self.__data_type_to_asm_data_type
-                                          (var.get_data_type().get_size_in_bites())) + "\n"
+        arrays = symbol_table.get_all_arrays()
+
+        for var in symbol_tabel_vars.values():
+            string += self.__write_def_var(var.get_name(),
+                                           self.__data_type_to_asm_data_type
+                                           (var.get_data_type().get_size_in_bites())) + "\n"
+
+        for array in arrays.values():
+            string += self.__write_def_array(array.get_name(),
+                                             self.__data_type_to_asm_data_type
+                                             (array.get_data_type().get_size_in_bites()),
+                                             str(array.get_size())) + "\n"
 
         context.append_string(string)
 
-    @writer(IR.FreeVariable)
+    @writer(IR.IR_FreeVariable)
     def write(self, free_variable, context):
         pass
 
-    @writer(IR.FreeInteger)
+    @writer(IR.IR_ArrayCell)
+    def write(self, get_value_from_array, context):
+        context.set_data_size(get_value_from_array.get_index().get_data_type().get_size_in_bites())
+
+        string = \
+            self.__write_array_cell(get_value_from_array.get_ir_array().get_name(),
+                                    self.write(get_value_from_array.get_index(), context))
+
+        return string
+
+    @writer(IR.IR_FreeInteger)
     def write(self, free_integer, context):
         pass
 
-    @writer(IR.FreeTemp)
+    @writer(IR.IR_FreeTemp)
     def write(self, free_temp, context):
         self.__registers.free_register(free_temp.get_temp().get_value())
 
-    @writer(IR.DefTemp)
+    @writer(IR.IR_DefTemp)
     def write(self, def_temp, context):
         register = self.__registers.get_free_register()
         def_temp.get_temp().set_value(register)
 
     @writer(IR.IR_Assignment)
     def write(self, assignment, context):
-        context.set_data_size(self.__symbol_tabel.get_var(assignment.get_var_name()).
-                              get_data_type().get_size_in_bites())
+
+        dest = self.write(assignment.get_dest(), context)
+
+        var = assignment.get_dest()
+        context.set_data_size(var.get_data_type().get_size_in_bites())
+
+        src = self.write(assignment.get_value(), context)
 
         string = \
-            self.__write_assign_local_var(assignment.get_var_name(),
-                                          self.write(assignment.get_value(), context)) + "\n"
+            self.__write_assign_local_var(dest,
+                                          src) + "\n"
         context.append_string(string)
 
     @writer(IR.IR_AssignTemp)
@@ -328,8 +379,7 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         register_enum = assign_temp.get_temp().get_value()
 
-        register = Registers.get_instance().get_register_class\
-            (register_enum)\
+        register = Registers.get_instance().get_register_class(register_enum)
 
         part_of_register = register.get_part_of_register(var_size_in_bites)
 
@@ -338,6 +388,8 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         if var_size_in_bites < register.get_size_in_bites():
             string += \
                 self.__write_xor(register_enum.name, register_enum.name) + "\n"
+
+        context.set_data_size(var_size_in_bites)
 
         string += \
             self.__write_mov_to_register(part_of_register.name,
@@ -376,9 +428,11 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
     @writer(IR.IR_MulOperation)
     def write(self, mul_operation, context):
+        context.set_data_size(mul_operation.get_dest_temp().get_data_type().get_size_in_bites())
+
         string = \
-            self.__write_imul(mul_operation.get_dest_temp().get_value().name,
-                              mul_operation.get_src_temp().get_value().name) + "\n"
+            self.__write_imul(self.write(mul_operation.get_dest_temp(), context),
+                              self.write(mul_operation.get_src_temp(), context)) + "\n"
 
         context.append_string(string)
 
@@ -410,9 +464,6 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         string += self.__write_mov_to_register(eax_register.name,
                                                self.__div_temp_1) + "\n"
-
-        string += self.__write_mov_to_register(ecx_register.name,
-                                               self.__div_temp_2) + "\n"
 
         string += self.__write_mov_to_register(edx_register.name,
                                                self.__div_temp_3) + "\n"
@@ -450,9 +501,6 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         string += self.__write_mov_to_register(eax_register.name,
                                                self.__div_temp_1) + "\n"
 
-        string += self.__write_mov_to_register(ecx_register.name,
-                                               self.__div_temp_2) + "\n"
-
         string += self.__write_mov_to_register(edx_register.name,
                                                self.__div_temp_3) + "\n"
 
@@ -478,35 +526,35 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         self.write(if_statement.get_jump_to_than_part(), context)
         self.write(if_statement.get_jump_to_else_part(), context)
 
-    @writer(IR.Jump)
+    @writer(IR.IR_Jump)
     def write(self, jump, context):
         string = \
             self.__write_jmp(jump.get_label().get_name()) + "\n"
 
         context.append_string(string)
 
-    @writer(IR.JumpLess)
+    @writer(IR.IR_JumpLess)
     def write(self, jump_less, context):
         string = \
             self.__write_jl(jump_less.get_label().get_name()) + "\n"
 
         context.append_string(string)
 
-    @writer(IR.JumpGreater)
+    @writer(IR.IR_JumpGreater)
     def write(self, jump_greater, context):
         string = \
             self.__write_jg(jump_greater.get_label().get_name()) + "\n"
 
         context.append_string(string)
 
-    @writer(IR.JumpEquals)
+    @writer(IR.IR_JumpEquals)
     def write(self, jump_equals, context):
         string = \
             self.__write_je(jump_equals.get_label().get_name()) + "\n"
 
         context.append_string(string)
 
-    @writer(IR.JumpNotEquals)
+    @writer(IR.IR_JumpNotEquals)
     def write(self, jump_not_equals, context):
         string = \
             self.__write_jne(jump_not_equals.get_label().get_name()) + "\n"
@@ -529,12 +577,29 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         if basic_block.get_jump_block() is not None:
             self.write(basic_block.get_jump_block(), context)
 
+    @writer(IR.IR_ReadLine)
+    def write(self, ir_read_line, context):
+
+        string = \
+            self.__write_read_line(ir_read_line.get_array_name(),
+                                   self.write(ir_read_line.get_num_of_chars(), context)) + "\n"
+
+        context.append_string(string)
+
     @writer(IR.IR_Print)
     def write(self, print_statement, context):
 
         string = \
             self.__write_print(print_statement.get_print_format(),
-                               print_statement.get_var().get_name()) + "\n"
+                               self.write(print_statement.get_var(), context)) + "\n"
+
+        context.append_string(string)
+
+    @writer(IR.IR_PrintArray)
+    def write(self, print_array, context):
+
+        string = \
+            self.__write_print_array(print_array.get_array_name()) + "\n"
 
         context.append_string(string)
 
