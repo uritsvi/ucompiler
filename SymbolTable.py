@@ -80,7 +80,7 @@ class SymbolTableFunctionPrototype:
         return self.__parameters
 
     def get_parameter_name(self, name):
-        return self.__parameters_name[name]
+        return self.__parameters_name.get(name)
 
     def var_in_parameters(self, name):
         if name in self.__parameters_name.keys():
