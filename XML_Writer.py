@@ -79,10 +79,7 @@ class AST_XML_Program(AST_Visitor):
 
         return xml_object
 
-<<<<<<< HEAD
     @visitor(AST.AST_Expression)
-=======
-    @visitor(AST_NewVariable)
     def visit(self, new_variable, context):
         xml_object = self.create_element("new variable")
         name_object = self.create_element("name:" + new_variable.get_name())
@@ -91,8 +88,7 @@ class AST_XML_Program(AST_Visitor):
 
         return xml_object
 
-    @visitor(AST_Expression)
->>>>>>> parent of 475a605 (Added support for character type variables,)
+    @visitor(AST.AST_Expression)
     def visit(self, expression, context):
         xml_object = self.create_element("expression")
 
@@ -174,6 +170,7 @@ class AST_XML_Program(AST_Visitor):
     def visit(self, and_operator, context):
         xml_object = self.create_element("or operator")
         return xml_object
+
 
     @visitor(AST.AST_IfStatement)
     def visit(self, if_statement, context):
