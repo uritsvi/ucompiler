@@ -88,5 +88,25 @@ Example:
 
 Exit the program with the specified exit code
 
+9. define function
+Example:
+void a(char a)
+{
+    @print a;
+}
+
+defines a function the can receive values, return value and execute code.
+
+10. function return type
+void - return nothing
+every data type
+
+11. function call
+Example:
+int_32 a = mul(10, 20);
+
+calls a defined function, if the function returns a value the functions call is treated like a regular value
+
+
 
 

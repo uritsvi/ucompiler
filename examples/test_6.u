@@ -1,14 +1,17 @@
-int_32 a = 5;
-int_32 c = 5;
-
-if(c < 1)
+void main()
 {
-    @exit 1;
-    a = 6;
-}
-else
-{
-    a = 7;
-}
+    int_32 a = 5;
+    int_32 c = 5;
 
-@print a;
+    if(c < 1)
+    {
+        @exit 1;
+        a = 6;
+    }
+    else
+    {
+        a = 7;
+    }
+
+    @print a;
+}

@@ -1,6 +1,5 @@
 import DataTypes
 import Utils
-import SymbolTable
 
 from AST_Visitor import *
 
@@ -21,6 +20,8 @@ class Context:
     def __init__(self):
         self.__if_statement_labels = None
         self.__condition = None
+        self.__current_function = None
+        self.__current_function_table = None
 
     def set_if_statement_labels(self, if_statements_labels):
         self.__if_statement_labels = if_statements_labels
@@ -33,6 +34,12 @@ class Context:
 
     def get_condition(self):
         return self.__condition
+
+    def set_current_function(self, function):
+        self.__current_function = function
+
+    def get_current_function(self):
+        return self.__current_function
 
 
 class IR_Interface:
@@ -65,6 +72,15 @@ class IR_FreeInteger(IR_FreeValue):
 
 
 class IR_Labels:
+    __instance = None
+
+    @classmethod
+    def get_instance(cls):
+        if cls.__instance is None:
+            cls.__instance = IR_Labels()
+
+        return cls.__instance
+
     def __init__(self):
         self.__count = 0
 
@@ -155,6 +171,25 @@ class IR_Integer(IR_Value):
         return self.__data_type
 
 
+class IR_Parameter(IR_Value):
+
+    def __init__(self, name, data_type):
+        self.__name = name
+        self.__data_type = data_type
+
+    def get_value(self):
+        return self.__name
+
+    def get_name(self):
+        return self.__name
+
+    def get_data_type(self):
+        return self.__data_type
+
+    def add_free_operation(self, basic_block):
+        pass
+
+
 class IR_Variable(IR_Value):
 
     def __init__(self, name, data_type):
@@ -174,11 +209,12 @@ class IR_Variable(IR_Value):
         return self.__data_type
 
 
+# this class is a shield for a temp
 class IR_TempValue(IR_Value):
 
-    def __init__(self, data_type):
+    def __init__(self):
         self.__value = None
-        self.__data_type = data_type
+        self.__data_type = DataTypes.int_32()
 
     # set the temp
     def set_value(self, data):
@@ -196,14 +232,37 @@ class IR_TempValue(IR_Value):
 
 
 class IR_DefTemp(IR_Interface):
-    def __init__(self, data_type):
-        self.__temp = IR_TempValue(data_type)
+    def __init__(self):
+        self.__temp = IR_TempValue()
 
     def get_temp(self):
         return self.__temp
 
     def add_free_operation(self, current_basic_block):
         pass
+
+
+class IR_DefReturnFromFunctionValueTemp(IR_DefTemp):
+    pass
+
+
+class IR_ReturnFromFunctionValueTemp(IR_TempValue):
+    pass
+
+
+class IR_ReturnFromFunctionValue(IR_TempValue):
+    def __init__(self, dest_temp, function_call, data_type):
+        super().__init__()
+
+        self.__dest_temp = dest_temp
+        self.__function_call = function_call
+        self.__data_type = data_type
+
+    def add_free_operation(self, current_basic_block):
+        self.__dest_temp.add_free_operation(current_basic_block)
+
+    def get_dest_temp(self):
+        return self.__dest_temp
 
 
 class IR_ValueOperation(IR_Interface):
@@ -241,11 +300,11 @@ class IR_MulOperation(IR_ValueOperation):
     pass
 
 
-class IR_DevOperation(IR_ValueOperation):
+class IR_DivOperation(IR_ValueOperation):
     pass
 
 
-class IR_DevRestOperation(IR_ValueOperation):
+class IR_DivRestOperation(IR_ValueOperation):
     pass
 
 
@@ -338,11 +397,15 @@ class IR_JumpGreater(IR_JumpStatement):
 
 
 class IR_Function(IR_Interface):
-    def __init__(self):
+    def __init__(self, name, symbol_table, function_prototype):
         self.__basic_blocks = []
         self.__current_basic_block = []
+        self.__function_prototype = function_prototype
 
-        basic_block = IR_BasicBlock(IR_Label("program"), None)
+        self.__symbol_table = symbol_table
+        self.__name = name
+
+        basic_block = IR_BasicBlock(IR_Label(IR_Labels.get_instance().get_new_label_name()), None)
 
         self.__current_basic_block.append(basic_block)
         self.__basic_blocks.append(basic_block)
@@ -379,6 +442,15 @@ class IR_Function(IR_Interface):
     def get_all_basic_blocks(self):
         return self.__basic_blocks
 
+    def get_symbol_table(self):
+        return self.__symbol_table
+
+    def get_name(self):
+        return self.__name
+
+    def get_function_prototype(self):
+        return self.__function_prototype
+
 
 class IR_BasicBlock(IR_Interface):
     def __init__(self, label, jump_block):
@@ -391,6 +463,9 @@ class IR_BasicBlock(IR_Interface):
         self.__statements = []
 
     def add_statement(self, statement):
+        if type(statement) == IR_DefTemp:
+            print()
+
         self.__statements.append(statement)
 
     def set_jump_block(self, jump_block):
@@ -424,15 +499,14 @@ class IR_Label(IR_Interface):
 
 
 class IR_Program:
-    def __init__(self, main_function, symbol_tabel):
-        self.__main_function = main_function
-        self.__symbol_tabel = symbol_tabel
+    def __init__(self):
+        self.__functions = []
 
-    def get_main_function(self):
-        return self.__main_function
+    def add_function(self, function):
+        self.__functions.append(function)
 
-    def get_symbol_tabel(self):
-        return self.__symbol_tabel
+    def get_all_functions(self):
+        return self.__functions
 
 
 class IR_Array:
@@ -472,36 +546,29 @@ class IR_ArrayCell(IR_Value):
         return self.__ir_array.get_data_type()
 
 
-class IR_Function_SymbolTabel:
-
+class IR_SymbolTabel:
     def __init__(self):
         self.__vars = {}
         self.__arrays = {}
+        self.__parameters = {}
 
     def get_all_vars(self):
-
-        for tabel in SymbolTable.Tables.get_instance().get_all_tables():
-            for var in tabel.get_all_vars():
-                self.__vars[var.get_name()] = (IR_Variable(var.get_name(), var.get_data_type()))
-
         return self.__vars
 
     def get_all_arrays(self):
-        for tabel in SymbolTable.Tables.get_instance().get_all_tables():
-            for symbol_Tabel_array in tabel.get_all_arrays():
-                self.__arrays[symbol_Tabel_array.get_name()] = (IR_Array(symbol_Tabel_array.get_name(),
-                                                                         symbol_Tabel_array.get_data_type(),
-                                                                         symbol_Tabel_array.get_size().get_value()))
-
         return self.__arrays
 
-    def get_var_or_array(self, var_name):
-        var = self.__vars.get(var_name)
+    def add_var(self, var):
+        self.__vars[var.get_name()] = \
+            IR_Variable(var.get_name(), var.get_data_type())
 
-        if var is None:
-            return self.__arrays.get(var_name)
+    def add_array(self, array, size):
+        self.__arrays[array.get_name()] = \
+            IR_Array(array.get_name(), array.get_data_type(), size)
 
-        return var
+    def add_parameter(self, parameter):
+        self.__parameters[parameter.get_name()] = \
+            IR_Parameter(parameter.get_name(), parameter.get_data_type())
 
 
 class IR_ReadLine(IR_Interface):
@@ -567,19 +634,85 @@ class IR_Exit(IR_Interface):
         pass
 
 
+class IR_PassParameterToFunction(IR_Interface):
+    def __init__(self, value):
+        self.__value = value
+
+    def get_value(self):
+        return self.__value
+
+    def add_free_operation(self, current_basic_block):
+        self.__value.add_free_operation(current_basic_block)
+
+
+class IR_FunctionCall(IR_Interface):
+    def __init__(self, name, parameters):
+        self.__name = name
+        self.__parameters = parameters
+
+    def get_name(self):
+        return self.__name
+
+    def add_free_operation(self, current_basic_block):
+        self.__parameters.add_free_operation(current_basic_block)
+
+
+class IR_ReturnFromFunction(IR_Interface):
+    def add_free_operation(self, current_basic_block):
+        pass
+
+
+class IR_PushState(IR_Interface):
+    def add_free_operation(self, current_basic_block):
+        pass
+
+
+class IR_PopState(IR_Interface):
+    def add_free_operation(self, current_basic_block):
+        pass
+
+
 class IR_Generator(AST_Visitor):
     def __init__(self):
-        self.__main_function = IR_Function()
-        self.__labels = IR_Labels()
+        self.__program = IR_Program()
 
     def gen(self, main_AST):
         self.visit(main_AST, Context())
-        symbol_tale = IR_Function_SymbolTabel()
+        return self.__program
 
-        program = IR_Program(self.__main_function, symbol_tale)
-        return program
+    # creates an ir symbol tabel from a symbol tabel(class implemented in file SymbolTabel.py)
+    def __create_ir_symbol_table(self, symbol_tables, context):
+        ir_table = IR_SymbolTabel()
 
-    @visitor(AST_CodeBlock)
+        for table in symbol_tables:
+            for var in table.get_all_vars():
+                ir_table.add_var(var)
+
+        for table in symbol_tables:
+            for array in table.get_all_arrays():
+                ir_table.add_array(array, self.visit(array.get_size(), context))
+
+        return ir_table
+
+    @visitor(AST.AST_Program)
+    def visit(self, program, context):
+        for function in program.get_functions():
+            self.visit(function, context)
+
+    @visitor(AST.AST_Function)
+    def visit(self, function, context):
+        function_name = function.get_name()
+        symbol_table = self.__create_ir_symbol_table(function.get_all_tables(), context)
+        
+        ir_function = IR_Function(function_name, symbol_table, function.get_prototype())
+        
+        context.set_current_function(ir_function)
+
+        self.visit(function.get_code_block(), context)
+        
+        self.__program.add_function(ir_function)
+
+    @visitor(AST.AST_CodeBlock)
     def visit(self, code_block, context):
         for statement in code_block.get_all_statements():
             if statement is None:
@@ -587,13 +720,13 @@ class IR_Generator(AST_Visitor):
 
             self.visit(statement, context)
 
-    @visitor(AST_Integer)
+    @visitor(AST.AST_Integer)
     def visit(self, integer, context):
         integer = IR_Integer(integer.get_value(), integer.get_data_type())
 
         return integer
 
-    @visitor(AST_ArrayCell)
+    @visitor(AST.AST_ArrayCell)
     def visit(self, get_value_from_array, context):
 
         array = self.visit(get_value_from_array.get_array_name(), context)
@@ -604,148 +737,157 @@ class IR_Generator(AST_Visitor):
                        get_value_from_array.get_data_type)
 
         def_index_temp = \
-            IR_DefTemp(DataTypes.int_32())
+            IR_DefTemp()
 
         index_temp = def_index_temp.get_temp()
 
         assign_index_temp = IR_AssignTemp(index_temp, index)
 
-        self.__main_function.get_current_basic_block().add_statement(def_index_temp)
-        self.__main_function.get_current_basic_block().add_statement(assign_index_temp)
+        current_function = \
+            context.get_current_function()
+
+        current_function.get_current_basic_block().add_statement(def_index_temp)
+        current_function.get_current_basic_block().add_statement(assign_index_temp)
 
         # to get to the array cell you need to mul the index you want to
         # access in the array by the size in bites of the array data type
         mul_operation = IR_MulOperation()
         mul_operation.set_temps(index_temp, data_type_size_in_bites)
 
-        assign_index_temp.add_free_operation(self.__main_function.get_current_basic_block())
+        assign_index_temp.add_free_operation(current_function.get_current_basic_block())
 
-        self.__main_function.get_current_basic_block().add_statement(mul_operation)
-        mul_operation.add_free_operation(self.__main_function.get_current_basic_block())
+        current_function.get_current_basic_block().add_statement(mul_operation)
+        mul_operation.add_free_operation(current_function.get_current_basic_block())
 
         array_cell = \
             IR_ArrayCell(array, index_temp)
 
         return array_cell
 
-    @visitor(AST_Variable)
+    @visitor(AST.AST_Variable)
     def visit(self, variable, context):
-
         variable = IR_Variable(variable.get_name(), variable.get_data_type())
 
         return variable
 
-    @visitor(AST_Array)
+    @visitor(AST.AST_Array)
     def visit(self, array, context):
-        array = IR_Array(array.get_name(), array.get_data_type(), array.get_size())
+        array = IR_Array(array.get_name(), array.get_data_type(), self.visit(array.get_size(), context))
 
         return array
 
-    @visitor(AST_NewVariable)
-    def visit(self, new_variable, context):
-        return IR_Variable(new_variable.get_name(),
-                           SymbolTable.Tables.get_instance().get_current_table().
-                           get_var(new_variable.get_name()).get_data_type())
-
-    @visitor(AST_Expression)
+    @visitor(AST.AST_Expression)
     def visit(self, expression, context):
-        def_dest_temp = IR_DefTemp(expression.get_data_type())
-        def_src_temp = IR_DefTemp(expression.get_data_type())
+        expression_1 = self.visit(expression.get_expression_1(), context)
+        expression_2 = self.visit(expression.get_expression_2(), context)
+
+        def_dest_temp = IR_DefTemp()
+        def_src_temp = IR_DefTemp()
 
         dest_temp = def_dest_temp.get_temp()
         src_temp = def_src_temp.get_temp()
 
-        assign_dest_temp = IR_AssignTemp(dest_temp, self.visit(expression.get_expression_1(), context))
-        assign_src_temp = IR_AssignTemp(src_temp, self.visit(expression.get_expression_2(), context))
+        current_function = \
+            context.get_current_function()
 
-        operation = self.visit(expression.get_operator(), context)
+        assign_dest_temp = IR_AssignTemp(dest_temp, expression_1)
+        current_function.get_current_basic_block().add_statement(def_dest_temp)
+        current_function.get_current_basic_block().add_statement(assign_dest_temp)
+
+        assign_src_temp = IR_AssignTemp(src_temp, expression_2)
+        current_function.get_current_basic_block().add_statement(def_src_temp)
+        assign_src_temp.add_free_operation(current_function.get_current_basic_block())
+
+        operation = \
+            self.visit(expression.get_operator(), context)
+
         operation.set_temps(dest_temp, src_temp)
 
-        self.__main_function.get_current_basic_block().add_statement(def_dest_temp)
-        self.__main_function.get_current_basic_block().add_statement(def_src_temp)
+        current_function.get_current_basic_block().add_statement(assign_src_temp)
+        assign_dest_temp.add_free_operation(current_function.get_current_basic_block())
 
-        self.__main_function.get_current_basic_block().add_statement(assign_dest_temp)
-        assign_src_temp.add_free_operation(self.__main_function.get_current_basic_block())
+        current_function.get_current_basic_block().add_statement(operation)
 
-        self.__main_function.get_current_basic_block().add_statement(assign_src_temp)
-        assign_dest_temp.add_free_operation(self.__main_function.get_current_basic_block())
-
-        self.__main_function.get_current_basic_block().add_statement(operation)
-
-        src_temp.add_free_operation(self.__main_function.get_current_basic_block())
-        operation.add_free_operation(self.__main_function.get_current_basic_block())
+        src_temp.add_free_operation(current_function.get_current_basic_block())
+        operation.add_free_operation(current_function.get_current_basic_block())
 
         return dest_temp
 
-    @visitor(AST_DefVar)
+    @visitor(AST.AST_DefVar)
     def visit(self, def_var, context):
         self.visit(def_var.get_assignment(), context)
 
-    @visitor(AST_Assignment)
+    @visitor(AST.AST_Assignment)
     def visit(self, assignment, context):
         value = self.visit(assignment.get_value(), context)
         dest = self.visit(assignment.get_dest(), context)
 
-        def_temp = IR_DefTemp(value.get_data_type())
+        def_temp = IR_DefTemp()
         temp = def_temp.get_temp()
 
         assign_temp = IR_AssignTemp(temp, value)
 
         ir_assignment = IR_Assignment(dest, temp)
 
-        self.__main_function.get_current_basic_block().add_statement(def_temp)
-        self.__main_function.get_current_basic_block().add_statement(assign_temp)
-        self.__main_function.get_current_basic_block().add_statement(ir_assignment)
+        current_function = \
+            context.get_current_function()
 
-        temp.add_free_operation(self.__main_function.get_current_basic_block())
-        value.add_free_operation(self.__main_function.get_current_basic_block())
-        dest.add_free_operation(self.__main_function.get_current_basic_block())
+        current_function.get_current_basic_block().add_statement(def_temp)
+        current_function.get_current_basic_block().add_statement(assign_temp)
+        current_function.get_current_basic_block().add_statement(ir_assignment)
 
-    @visitor(AST_Add_Operator)
+        temp.add_free_operation(current_function.get_current_basic_block())
+        value.add_free_operation(current_function.get_current_basic_block())
+        dest.add_free_operation(current_function.get_current_basic_block())
+
+    @visitor(AST.AST_Add_Operator)
     def visit(self, add_operator, context):
         return IR_AddOperation()
 
-    @visitor(AST_Sub_Operator)
+    @visitor(AST.AST_Sub_Operator)
     def visit(self, sub_operator, context):
         return IR_SUbOperation()
 
-    @visitor(AST_Mul_Operator)
+    @visitor(AST.AST_Mul_Operator)
     def visit(self, mul_operator, context):
         return IR_MulOperation()
 
-    @visitor(AST_Div_Operator)
+    @visitor(AST.AST_Div_Operator)
     def visit(self, dev_operator, context):
-        return IR_DevOperation()
+        return IR_DivOperation()
 
-    @visitor(AST_Remainder_Operator)
+    @visitor(AST.AST_Remainder_Operator)
     def visit(self, dev_res_operator, context):
-        return IR_DevRestOperation()
+        return IR_DivRestOperation()
 
-    @visitor(AST_LessOperatorAST)
+    @visitor(AST.AST_LessOperator)
     def visit(self, less_operator, context):
         return IR_JumpLess()
 
-    @visitor(AST_GreaterOperatorAST)
+    @visitor(AST.AST_GreaterOperator)
     def visit(self, greater_operator, context):
         return IR_JumpGreater()
 
-    @visitor(AST_EqualityOperatorAST)
+    @visitor(AST.AST_EqualityOperator)
     def visit(self, equality_operator, context):
         return IR_JumpEquals()
 
-    @visitor(AST_NotEqualsOperatorAST)
+    @visitor(AST.AST_NotEqualsOperator)
     def visit(self, not_equals_operator, context):
         return IR_JumpNotEquals()
 
-    @visitor(AST_AndOperator)
+    @visitor(AST.AST_AndOperator)
     def visit(self, and_operator, context):
 
         condition = context.get_condition()
 
-        new_basic_block_label = IR_Label(self.__labels.get_new_label_name())
+        new_basic_block_label = IR_Label(IR_Labels.get_instance().get_new_label_name())
+
+        current_function = \
+            context.get_current_function()
 
         new_basic_block = IR_BasicBlock(new_basic_block_label,
-                                        self.__main_function.get_current_basic_block().get_jump_block())
+                                        current_function.get_current_basic_block().get_jump_block())
 
         jump_to_else_part = IR_Jump()
 
@@ -756,26 +898,29 @@ class IR_Generator(AST_Visitor):
 
         jump_to_than_part.set_label(new_basic_block_label)
 
-        condition.add_free_operation(self.__main_function.get_current_basic_block())
+        condition.add_free_operation(current_function.get_current_basic_block())
 
         ir_if = IR_IfStatement(condition,
                                jump_to_than_part,
                                jump_to_else_part)
 
-        self.__main_function.get_current_basic_block().set_jump_block(ir_if)
+        current_function.get_current_basic_block().set_jump_block(ir_if)
 
-        self.__main_function.add_basic_block(new_basic_block)
-        self.__main_function.push_current_basic_block(new_basic_block)
+        current_function.add_basic_block(new_basic_block)
+        current_function.push_current_basic_block(new_basic_block)
 
-    @visitor(AST_OrOperatorAST)
+    @visitor(AST.AST_OrOperator)
     def visit(self, or_condition, context):
 
         condition = context.get_condition()
 
-        new_basic_block_label = IR_Label(self.__labels.get_new_label_name())
+        new_basic_block_label = IR_Label(IR_Labels.get_instance().get_new_label_name())
+
+        current_function = \
+            context.get_current_function()
 
         new_basic_block = IR_BasicBlock(new_basic_block_label,
-                                        self.__main_function.get_current_basic_block().get_jump_block())
+                                        current_function.get_current_basic_block().get_jump_block())
 
         jump_to_else_part = IR_Jump()
         jump_to_else_part.set_label(new_basic_block_label)
@@ -785,30 +930,33 @@ class IR_Generator(AST_Visitor):
 
         jump_to_than_part.set_label(context.get_if_statement_labels().get_than_part_label())
 
-        condition.add_free_operation(self.__main_function.get_current_basic_block())
+        condition.add_free_operation(current_function.get_current_basic_block())
 
         ir_if = IR_IfStatement(condition,
                                jump_to_than_part,
                                jump_to_else_part)
 
-        self.__main_function.get_current_basic_block().set_jump_block(ir_if)
+        current_function.get_current_basic_block().set_jump_block(ir_if)
 
-        self.__main_function.add_basic_block(new_basic_block)
-        self.__main_function.push_current_basic_block(new_basic_block)
+        current_function.add_basic_block(new_basic_block)
+        current_function.push_current_basic_block(new_basic_block)
 
-    @visitor(AST_IfStatement)
+    @visitor(AST.AST_IfStatement)
     def visit(self, if_statement, context):
 
         contains_else_part = False
         if if_statement.get_else_part() is not None:
             contains_else_part = True
 
+        current_function = \
+            context.get_current_function()
+
         last_jump_block = \
-            self.__main_function.get_current_basic_block().get_jump_block()
+            current_function.get_current_basic_block().get_jump_block()
 
         # this label can be for the else part or the merge block
-        else_part_label = IR_Label(self.__labels.get_new_label_name())
-        than_part_label = IR_Label(self.__labels.get_new_label_name())
+        else_part_label = IR_Label(IR_Labels.get_instance().get_new_label_name())
+        than_part_label = IR_Label(IR_Labels.get_instance().get_new_label_name())
 
         context.set_if_statement_labels(IR_IfStatementLabels(than_part_label, else_part_label))
         condition = self.visit(if_statement.get_condition(), context)
@@ -820,7 +968,7 @@ class IR_Generator(AST_Visitor):
         jump_to_else_part.set_label(else_part_label)
 
         if contains_else_part:
-            merge_block_label = IR_Label(self.__labels.get_new_label_name())
+            merge_block_label = IR_Label(IR_Labels.get_instance().get_new_label_name())
         else:
             merge_block_label = else_part_label
 
@@ -834,57 +982,60 @@ class IR_Generator(AST_Visitor):
                            jump_to_than_part,
                            jump_to_else_part)
 
-        self.__main_function.get_current_basic_block().set_jump_block(ir_if_statement)
+        current_function.get_current_basic_block().set_jump_block(ir_if_statement)
 
         # gen the then part code
-        self.__main_function.push_current_basic_block(than_part)
-        self.__main_function.add_basic_block(than_part)
+        current_function.push_current_basic_block(than_part)
+        current_function.add_basic_block(than_part)
 
-        condition.add_free_operation(self.__main_function.get_current_basic_block())
+        condition.add_free_operation(current_function.get_current_basic_block())
 
         self.visit(if_statement.get_then_part(), context)
 
         if contains_else_part:
             # gen else part code
             else_part = IR_BasicBlock(else_part_label, jump_to_merge_block)
-            self.__main_function.push_current_basic_block(else_part)
-            self.__main_function.add_basic_block(else_part)
+            current_function.push_current_basic_block(else_part)
+            current_function.add_basic_block(else_part)
 
-            condition.add_free_operation(self.__main_function.get_current_basic_block())
+            condition.add_free_operation(current_function.get_current_basic_block())
 
             self.visit(if_statement.get_else_part(), context)
 
-            self.__main_function.pop_current_basic_block()
+            current_function.pop_current_basic_block()
 
         merge_block = IR_BasicBlock(merge_block_label, last_jump_block)
 
         # set the merge block as the new current block
-        self.__main_function.add_basic_block(merge_block)
-        self.__main_function.push_current_basic_block(merge_block)
+        current_function.add_basic_block(merge_block)
+        current_function.push_current_basic_block(merge_block)
 
-    @visitor(AST_ElseStatement)
+    @visitor(AST.AST_ElseStatement)
     def visit(self, else_statement, context):
         self.visit(else_statement.get_code_block(), context)
 
-    @visitor(AST_WhileLoopStatement)
+    @visitor(AST.AST_WhileLoopStatement)
     def visit(self, while_loop_statement, context):
-        last_jump_block = \
-            self.__main_function.get_current_basic_block().get_jump_block()
+        current_function = \
+            context.get_current_function()
 
-        cmp_block_label = IR_Label(self.__labels.get_new_label_name())
-        cmp_block = IR_BasicBlock(cmp_block_label, last_jump_block)
+        last_jump_block = \
+            current_function.get_current_basic_block().get_jump_block()
+
+        cmp_block_label = IR_Label(IR_Labels.get_instance().get_new_label_name())
+        cmp_block = IR_BasicBlock(cmp_block_label, None)
 
         jump_to_cmp_block = IR_Jump()
         jump_to_cmp_block.set_label(cmp_block_label)
 
-        self.__main_function.get_current_basic_block().set_jump_block(jump_to_cmp_block)
+        current_function.get_current_basic_block().set_jump_block(jump_to_cmp_block)
 
-        self.__main_function.add_basic_block(cmp_block)
-        self.__main_function.push_current_basic_block(cmp_block)
+        current_function.add_basic_block(cmp_block)
+        current_function.push_current_basic_block(cmp_block)
 
-        merge_block_label = IR_Label(self.__labels.get_new_label_name())
+        merge_block_label = IR_Label(IR_Labels.get_instance().get_new_label_name())
 
-        than_part_label = IR_Label(self.__labels.get_new_label_name())
+        than_part_label = IR_Label(IR_Labels.get_instance().get_new_label_name())
 
         context.set_if_statement_labels(IR_IfStatementLabels(than_part_label, merge_block_label))
         condition = self.visit(while_loop_statement.get_condition(), context)
@@ -902,49 +1053,53 @@ class IR_Generator(AST_Visitor):
                            jump_to_than_part,
                            jump_to_merge_block)
 
-        self.__main_function.get_current_basic_block().set_jump_block(ir_if_statement)
+        cmp_block.set_jump_block(ir_if_statement)
 
         # gen the then part code
-        self.__main_function.push_current_basic_block(than_part)
-        self.__main_function.add_basic_block(than_part)
+        current_function.push_current_basic_block(than_part)
+        current_function.add_basic_block(than_part)
 
-        condition.add_free_operation(self.__main_function.get_current_basic_block())
+        condition.add_free_operation(current_function.get_current_basic_block())
 
         self.visit(while_loop_statement.get_code_block(), context)
 
-        self.__main_function.pop_current_basic_block()
+        current_function.pop_current_basic_block()
 
-        merge_block = IR_BasicBlock(merge_block_label, last_jump_block)
+        merge_block = \
+            IR_BasicBlock(merge_block_label, last_jump_block)
 
         # set the merge block as the new current block
-        self.__main_function.add_basic_block(merge_block)
-        self.__main_function.push_current_basic_block(merge_block)
+        current_function.add_basic_block(merge_block)
+        current_function.push_current_basic_block(merge_block)
 
-    @visitor(AST_Condition)
+    @visitor(AST.AST_Condition)
     def visit(self, condition, context):
-        def_temp = IR_DefTemp(condition.get_expression_1().get_data_type())
+        def_temp = IR_DefTemp()
         temp_1 = def_temp.get_temp()
 
         expression_1 = self.visit(condition.get_expression_1(), context)
 
         assign_temp = IR_AssignTemp(temp_1, expression_1)
 
-        self.__main_function.get_current_basic_block().add_statement(def_temp)
-        self.__main_function.get_current_basic_block().add_statement(assign_temp)
+        current_function = \
+            context.get_current_function()
 
-        expression_1.add_free_operation(self.__main_function.get_current_basic_block())
+        current_function.get_current_basic_block().add_statement(def_temp)
+        current_function.get_current_basic_block().add_statement(assign_temp)
 
-        def_temp = IR_DefTemp(condition.get_expression_1().get_data_type())
+        expression_1.add_free_operation(current_function.get_current_basic_block())
+
+        def_temp = IR_DefTemp()
         temp_2 = def_temp.get_temp()
 
         expression_2 = self.visit(condition.get_expression_2(), context)
 
         assign_temp = IR_AssignTemp(temp_2, expression_2)
 
-        self.__main_function.get_current_basic_block().add_statement(def_temp)
-        self.__main_function.get_current_basic_block().add_statement(assign_temp)
+        current_function.get_current_basic_block().add_statement(def_temp)
+        current_function.get_current_basic_block().add_statement(assign_temp)
 
-        expression_2.add_free_operation(self.__main_function.get_current_basic_block())
+        expression_2.add_free_operation(current_function.get_current_basic_block())
 
         operator = self.visit(condition.get_operator(), context)
 
@@ -953,7 +1108,7 @@ class IR_Generator(AST_Visitor):
 
         return ir_condition
 
-    @visitor(AST_ComplexCondition)
+    @visitor(AST.AST_ComplexCondition)
     def visit(self, condition, context):
         condition_1 = self.visit(condition.get_condition_1(), context)
 
@@ -964,34 +1119,162 @@ class IR_Generator(AST_Visitor):
         condition_2 = self.visit(condition.get_condition_2(), context)
         return condition_2
 
-    @visitor(AST_ReadLine)
+    @visitor(AST.AST_ReadLine)
     def visit(self, read_line_statement, context):
         ir_read_line = \
             IR_ReadLine(read_line_statement.get_array_name(),
                         self.visit(read_line_statement.get_num_of_chars(), context))
 
-        self.__main_function.get_current_basic_block().add_statement(ir_read_line)
+        context.get_current_function().\
+            get_current_basic_block().add_statement(ir_read_line)
 
-    @visitor(AST_Print)
+    @visitor(AST.AST_Print)
     def visit(self, print_statement, context):
+        value = self.visit(print_statement.get_value(), context)
+
         ir_print = IR_Print(print_statement.get_print_format(),
-                            self.visit(print_statement.get_value(), context))
+                            value)
 
-        self.__main_function.get_current_basic_block().add_statement(ir_print)
+        current_basic_block = context.get_current_function().\
+            get_current_basic_block()
 
-    @visitor(AST_PrintArray)
+        current_basic_block.\
+            add_statement(ir_print)
+
+        value.add_free_operation(current_basic_block)
+
+    @visitor(AST.AST_PrintArray)
     def visit(self, print_array, context):
         ir_print = \
             IR_PrintArray(print_array.get_array_name())
 
-        self.__main_function.get_current_basic_block().add_statement(ir_print)
+        context.get_current_function().\
+            get_current_basic_block().add_statement(ir_print)
 
-    @visitor(AST_PrintString)
+    @visitor(AST.AST_PrintString)
     def visit(self, print_statement, context):
-        ir_print = IR_PrintString(print_statement.get_string())
-        self.__main_function.get_current_basic_block().add_statement(ir_print)
+        ir_print = \
+            IR_PrintString(print_statement.get_string())
 
-    @visitor(AST_Exit)
+        context.get_current_function().\
+            get_current_basic_block().add_statement(ir_print)
+
+    @visitor(AST.AST_Exit)
     def visit(self, exit_statement, context):
-        ir_exit_statement = IR_Exit(self.visit(exit_statement.get_exit_code(), context))
-        self.__main_function.get_current_basic_block().add_statement(ir_exit_statement)
+        ir_exit_statement = \
+            IR_Exit(self.visit(exit_statement.get_exit_code(), context))
+
+        context.get_current_function().\
+            get_current_basic_block().add_statement(ir_exit_statement)
+
+    @visitor(AST.AST_FunctionCall)
+    def visit(self, function_call, context):
+
+        current_basic_block = context.get_current_function().\
+            get_current_basic_block()
+
+        ir_push_state = IR_PushState()
+        current_basic_block.add_statement(ir_push_state)
+
+        ir_function_call = \
+            IR_FunctionCall(function_call.get_name(), function_call.get_parameters())
+
+        call_parameters = \
+            function_call.get_parameters().get_all_parameters()
+
+        # the calling convention is stdcall so i
+        # need to pass the parameters from the end to the start
+        call_parameters.reverse()
+
+        for parameter in call_parameters:
+
+            ir_parameter = \
+                self.visit(parameter, context)
+
+            ir_pass_parameter_to_function = \
+                IR_PassParameterToFunction(ir_parameter)
+
+            current_basic_block.add_statement(ir_pass_parameter_to_function)
+            ir_pass_parameter_to_function.add_free_operation(current_basic_block)
+
+        ir_pop_state = IR_PopState()
+
+        current_basic_block.add_statement(ir_function_call)
+        current_basic_block.add_statement(ir_pop_state)
+
+    @visitor(AST.AST_ReturnStatement)
+    def visit(self, return_statement, context):
+        ir_return_statement = \
+            IR_ReturnFromFunction()
+
+        current_basic_block = \
+            context.get_current_function().get_current_basic_block()
+
+        return_value = \
+            return_statement.get_value()
+
+        if return_value is not None:
+
+            return_value = \
+                self.visit(return_value, context)
+
+            def_return_from_function_value_temp = \
+                IR_DefReturnFromFunctionValueTemp()
+
+            temp = \
+                def_return_from_function_value_temp.get_temp()
+
+            fill_return_value_temp = \
+                IR_AssignTemp(temp, return_value)
+
+            current_basic_block.\
+                add_statement(def_return_from_function_value_temp)
+
+            current_basic_block.\
+                add_statement(fill_return_value_temp)
+
+            fill_return_value_temp. \
+                add_free_operation(current_basic_block)
+
+            current_basic_block. \
+                add_statement(ir_return_statement)
+
+            temp.\
+                add_free_operation(current_basic_block)
+        else:
+            current_basic_block. \
+                add_statement(ir_return_statement)
+
+    @visitor(AST.AST_FunctionCallReturnValue)
+    def visit(self, function_call_return_value, context):
+
+        current_basic_block = \
+            context.get_current_function().get_current_basic_block()
+
+        self.visit(function_call_return_value.get_function_call(), context)
+
+        data_type = \
+            function_call_return_value.get_data_type()
+
+        def_dest_temp = \
+            IR_DefTemp()
+
+        context.get_current_function().get_current_basic_block().\
+            add_statement(def_dest_temp)
+
+        dest_temp = \
+            def_dest_temp.get_temp()
+
+        assign_dest_temp = \
+            IR_AssignTemp(dest_temp, IR_ReturnFromFunctionValueTemp())
+
+
+        current_basic_block.\
+            add_statement(assign_dest_temp)
+
+        ir_return = \
+            IR_ReturnFromFunctionValue(dest_temp,
+                                       function_call_return_value.get_function_call(),
+                                       data_type)
+
+        return ir_return

@@ -3,16 +3,22 @@ from abc import abstractmethod
 
 class Context:
     def __init__(self):
-        self.__string = ""
+        self.__strings = []
+        self.__strings.append(None)
 
         # data for write methods
         self.__data_size = None
 
-    def append_string(self, string):
-        self.__string += string
+    def push_string(self):
+        string = ""
+        self.__strings.append(string)
 
-    def poll_string(self):
-        return self.__string
+    def pop_string(self):
+        last_string = self.__strings.pop()
+        return last_string
+
+    def append_string(self, string):
+        self.__strings[-1] += string
 
     def set_data_size(self, size):
         self.__data_size = size
@@ -22,10 +28,6 @@ class Context:
 
 
 class ASM_Generator:
-    def write(self, ir_program):
-        self.gen(ir_program)
-        return self.__context.poll_string()
-
     @abstractmethod
     def gen(self, ir_program):
         pass

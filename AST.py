@@ -5,6 +5,17 @@ class AST_Node:
     pass
 
 
+class AST_Program(AST_Node):
+    def __init__(self):
+        self.__functions = []
+
+    def add_function(self, function):
+        self.__functions.append(function)
+
+    def get_functions(self):
+        return self.__functions
+
+
 class AST_CodeBlock(AST_Node):
     def __init__(self):
         self.__statements = []
@@ -21,6 +32,18 @@ class AST_Value(AST_Node):
     @abstractmethod
     def get_data_type(self):
         pass
+
+
+class AST_FunctionCallReturnValue(AST_Value):
+    def __init__(self, function_call, function_return_data_type):
+        self.__function_call = function_call
+        self.__function_return_data_type = function_return_data_type
+
+    def get_data_type(self):
+        return self.__function_return_data_type
+
+    def get_function_call(self):
+        return self.__function_call
 
 
 class AST_Integer(AST_Value):
@@ -79,14 +102,6 @@ class AST_ArrayCell(AST_Value):
 
     def get_name(self):
         return self.__array_name.get_name()
-
-
-class AST_NewVariable(AST_Node):
-    def __init__(self, name):
-        self.__name = name
-
-    def get_name(self):
-        return self.__name
 
 
 class AST_Expression(AST_Value):
@@ -236,19 +251,19 @@ class AST_ConditionOperator(AST_Operator):
     pass
 
 
-class AST_LessOperatorAST(AST_ConditionOperator):
+class AST_LessOperator(AST_ConditionOperator):
     pass
 
 
-class AST_GreaterOperatorAST(AST_ConditionOperator):
+class AST_GreaterOperator(AST_ConditionOperator):
     pass
 
 
-class AST_EqualityOperatorAST(AST_ConditionOperator):
+class AST_EqualityOperator(AST_ConditionOperator):
     pass
 
 
-class AST_NotEqualsOperatorAST(AST_ConditionOperator):
+class AST_NotEqualsOperator(AST_ConditionOperator):
     pass
 
 
@@ -256,7 +271,7 @@ class AST_AndOperator(AST_ConditionOperator):
     pass
 
 
-class AST_OrOperatorAST(AST_ConditionOperator):
+class AST_OrOperator(AST_ConditionOperator):
     pass
 
 
@@ -306,3 +321,41 @@ class AST_Exit(AST_Node):
 
     def get_exit_code(self):
         return self.__exit_code
+
+
+class AST_Function(AST_Node):
+    def __init__(self, symbol_tabel_function, code_block):
+        self.__code_block = code_block
+        self.__symbol_table_function = symbol_tabel_function
+
+    def get_code_block(self):
+        return self.__code_block
+
+    def get_name(self):
+        return self.__symbol_table_function.get_name()
+
+    def get_all_tables(self):
+        return self.__symbol_table_function.get_all_tables()
+
+    def get_prototype(self):
+        return self.__symbol_table_function.get_function_prototype()
+
+
+class AST_FunctionCall(AST_Node):
+    def __init__(self, name, parameters):
+        self.__name = name
+        self.__parameters = parameters
+
+    def get_name(self):
+        return self.__name
+
+    def get_parameters(self):
+        return self.__parameters
+
+
+class AST_ReturnStatement(AST_Node):
+    def __init__(self, value):
+        self.__value = value
+
+    def get_value(self):
+        return self.__value

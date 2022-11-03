@@ -19,9 +19,10 @@ class RegistersType(Enum):
     al = 4,
     bl = 5,
     cl = 6,
-    dl = 7
+    dl = 7,
 
-    esi = 8
+    esi = 8,
+    edi = 9
 
 
 class Register:
@@ -104,27 +105,41 @@ class Registers:
                                      RegistersType.ecx: ecx_Register(),
                                      RegistersType.edx: edx_Register()}
 
+        self.__all_equired_registers = []
+
     def get_free_register(self):
-        return self.__free_registers.pop()
+        if len(self.__free_registers) == 0:
+            Utils.Utils.handle_compiler_error("Compiler error: empty registers list" + "\n")
+            return
+
+        register = self.__free_registers.pop()
+
+        self.__all_equired_registers.append(register)
+
+        return register
 
     def free_register(self, register):
+        if register in self.__free_registers:
+            return
+
         self.__free_registers.append(register)
+        self.__all_equired_registers.remove(register)
 
     def get_register_class(self, register_type):
-        if register_type is None:
-            print()
-
         return self.__all_full_registers[register_type]
+
+    def get_all_equired_registers(self):
+        return self.__all_equired_registers
 
 
 class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
+    __data_types = {1: "BYTE", 4: "DWORD"}
+
     def __init__(self):
 
         super().__init__()
 
-        self.__data_types = {1: "BYTE", 4: "DWORD"}
         self.__registers = Registers()
-        self.__symbol_tabel = None
 
         """
         The div_temps will hold the values of the eax edx and ecx registers  
@@ -132,16 +147,14 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         The result of the division will be stored in dev_res
         """
 
-        self.__div_temp_1: Final[str] = "div_temp_1"
-        self.__div_temp_2: Final[str] = "div_temp_2"
-        self.__div_temp_3: Final[str] = "div_temp_3"
         self.__div_temp_RES: Final[str] = "div_temp_res"
 
-    def __data_type_to_asm_data_type(self, size_in_bites):
-        data_type = self.__data_types.get(size_in_bites)
+    @classmethod
+    def __data_type_to_asm_data_type(cls, size_in_bites):
+        data_type = cls.__data_types.get(size_in_bites)
 
         if data_type is None:
-            Utils.Utils.handle_compiler_error("compiler error: data type for size " +
+            Utils.Utils.handle_compiler_error("Compiler error: data type for size " +
                                               size_in_bites + " " + "is undefined")
             return None
 
@@ -156,25 +169,63 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
                          "include C:\masm32\include\masm32rt.inc\n" \
                          ".code\n" \
                          "start:\n" \
-                         "call main\n" \
-                         "main proc\n"
 
-        after_program = "invoke ExitProcess, 0\n" \
-                        "main endp\n" \
-                        "end start\n"
-
-        self.__symbol_tabel = ir_program.get_symbol_tabel()
+        after_program = "end start\n"
 
         context = ASM.Context()
 
+        context.push_string()
+
         context.append_string(before_program)
 
-        self.write(self.__symbol_tabel, context)
-        self.write(ir_program.get_main_function(), context)
+        context.append_string(self.__write_call_to_main() + "\n")
+        context.append_string(self.__write_exit(0) + "\n")
+
+        self.write(ir_program, context)
 
         context.append_string(after_program)
 
-        return context.poll_string()
+        return context.pop_string()
+
+    @classmethod
+    def __write_call_to_main(cls):
+        main_function_name = \
+            SymbolTable.FunctionsTabel.get_instance().get_function_tabel_name("main")
+
+        if main_function_name is None:
+            Utils.Utils.handle_compiler_error("Every program needs to contains a main function entry")
+
+        call_to_main = \
+            cls.__write_call(main_function_name)
+
+        return call_to_main
+
+    @classmethod
+    def __write_parameters(cls, parameters):
+        string = ""
+
+        for parameter in parameters:
+            string += ","
+            string += parameter.get_name() + ":" + cls.__data_type_to_asm_data_type(parameter.get_data_type().
+                                                                                    get_size_in_bites())
+
+        return string
+
+    @classmethod
+    def __write_call(cls, proc_name):
+        string = "call" + " " + proc_name
+        return string
+
+    @classmethod
+    def __write_invoke(cls, proc_name):
+        string = "invoke" + " " + proc_name
+        return string
+
+    @classmethod
+    def __write_proc(cls, name, parameters, code):
+        string = name + " " + "proc" + " " + cls.__write_parameters(parameters) + "\n" + code + "ret" + "\n" + \
+                 name + " " + "endp" + "\n"
+        return string
 
     @classmethod
     def __write_xor(cls, dest, src):
@@ -298,6 +349,93 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         return string
 
+    @classmethod
+    def __write_push_to_stack(cls, src):
+        string = \
+            "push" + " " + src
+
+        return string
+
+    @classmethod
+    def __write_pop(cls, dest):
+        string = \
+            "pop" + " " + dest
+
+        return string
+
+    @classmethod
+    def __write_ret(cls):
+        string = \
+            "ret"
+
+        return string
+
+    @classmethod
+    def __write_pass_parameter_to_proc(cls, value):
+
+        string = \
+            cls.__write_push_to_stack(value)
+
+        return string
+
+    def __write_push_state(self):
+        equired_registers = \
+            self.__registers.get_all_equired_registers()
+
+        string = ""
+
+        for register in equired_registers:
+            string += \
+                self.__write_push_to_stack(register.name) + "\n"
+
+        return string
+
+    def __write_pop_state(self):
+        equired_registers = \
+            self.__registers.get_all_equired_registers()
+
+        equired_registers.reverse()
+
+        string = ""
+
+        for register in equired_registers:
+            string += \
+                self.__write_pop(register.name) +"\n"
+
+        return string
+
+    @writer(IR.IR_Program)
+    def write(self, program, context):
+        all_functions = program.get_all_functions()
+
+        for function in all_functions:
+            self.write(function, context)
+
+    @writer(IR.IR_Function)
+    def write(self, function, context):
+        context.push_string()
+
+        symbol_table = function.get_symbol_table()
+        all_basic_blocks = function.get_all_basic_blocks()
+
+        self.write(symbol_table, context)
+
+        for basic_block in all_basic_blocks:
+            self.write(basic_block, context)
+
+        code = context.pop_string()
+
+        function_prototype = \
+            function.get_function_prototype()
+
+        string = self.__write_proc(function.get_name(),
+                                   function_prototype.get_parameters().get_all_parameters(),
+                                   code)
+
+        context.append_string(string)
+
+        return string
+
     @writer(IR.IR_Label)
     def write(self, label, context):
         string = \
@@ -305,16 +443,14 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         context.append_string(string)
 
-    @writer(IR.IR_Function_SymbolTabel)
+    @writer(IR.IR_SymbolTabel)
     def write(self, symbol_table, context):
         string = ""
 
         symbol_tabel_vars = symbol_table.get_all_vars()
 
-        symbol_tabel_vars[self.__div_temp_1] = (SymbolTable.Var(self.__div_temp_1, DataTypes.int_32()))
-        symbol_tabel_vars[self.__div_temp_2] = (SymbolTable.Var(self.__div_temp_2, DataTypes.int_32()))
-        symbol_tabel_vars[self.__div_temp_3] = (SymbolTable.Var(self.__div_temp_3, DataTypes.int_32()))
-        symbol_tabel_vars[self.__div_temp_RES] = (SymbolTable.Var(self.__div_temp_RES, DataTypes.int_32()))
+        symbol_tabel_vars[self.__div_temp_RES] = \
+            (SymbolTable.Var(self.__div_temp_RES, DataTypes.int_32()))
 
         arrays = symbol_table.get_all_arrays()
 
@@ -327,7 +463,7 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
             string += self.__write_def_array(array.get_name(),
                                              self.__data_type_to_asm_data_type
                                              (array.get_data_type().get_size_in_bites()),
-                                             str(array.get_size())) + "\n"
+                                             str(self.write(array.get_size(), context))) + "\n"
 
         context.append_string(string)
 
@@ -357,6 +493,11 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     def write(self, def_temp, context):
         register = self.__registers.get_free_register()
         def_temp.get_temp().set_value(register)
+
+    @writer(IR.IR_DefReturnFromFunctionValueTemp)
+    def write(self, def_return_from_value_function_temp, context):
+        register = RegistersType.eax
+        def_return_from_value_function_temp.get_temp().set_value(register)
 
     @writer(IR.IR_Assignment)
     def write(self, assignment, context):
@@ -436,73 +577,64 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         context.append_string(string)
 
-    @abstractmethod
-    @writer(IR.IR_DevRestOperation)
+    @writer(IR.IR_DivRestOperation)
     def write(self, dev_rest_operation, context):
         eax_register = RegistersType.eax
         ecx_register = RegistersType.ecx
         edx_register = RegistersType.edx
+        string = ""
 
-        string = self.__write_assign_local_var(self.__div_temp_1,
-                                               eax_register.name) + "\n"
+        string += \
+            self.__write_push_state()
 
-        string += self.__write_assign_local_var(self.__div_temp_2,
-                                                ecx_register.name) + "\n"
+        string += \
+            self.__write_mov_to_register(eax_register.name,
+                                         dev_rest_operation.get_dest_temp().get_value().name) + "\n"
 
-        string += self.__write_assign_local_var(self.__div_temp_3,
-                                                edx_register.name) + "\n"
+        string += \
+            self.__write_mov_to_register(ecx_register.name,
+                                         dev_rest_operation.get_src_temp().get_value().name) + "\n"
 
-        string += self.__write_mov_to_register(eax_register.name,
-                                               dev_rest_operation.get_dest_temp().get_value().name) + "\n"
+        string += \
+            self.__write_idev(ecx_register.name) + "\n"
 
-        string += self.__write_mov_to_register(ecx_register.name,
-                                               dev_rest_operation.get_src_temp().get_value().name) + "\n"
+        string += \
+            self.__write_assign_local_var(self.__div_temp_RES, edx_register.name) + "\n"
 
-        string += self.__write_idev(ecx_register.name) + "\n"
-
-        string += self.__write_assign_local_var(self.__div_temp_RES, edx_register.name) + "\n"
-
-        string += self.__write_mov_to_register(eax_register.name,
-                                               self.__div_temp_1) + "\n"
-
-        string += self.__write_mov_to_register(edx_register.name,
-                                               self.__div_temp_3) + "\n"
+        string += \
+            self.__write_pop_state()
 
         string += self.__write_mov_to_register(dev_rest_operation.get_dest_temp().get_value().name,
                                                self.__div_temp_RES) + "\n"
 
         context.append_string(string)
 
-    @writer(IR.IR_DevOperation)
-    def write(self, dev_operation, context):
+    @writer(IR.IR_DivOperation)
+    def writ(self, dev_operation, context):
         eax_register = RegistersType.eax
         ecx_register = RegistersType.ecx
-        edx_register = RegistersType.edx
 
-        string = self.__write_assign_local_var(self.__div_temp_1,
-                                               eax_register.name) + "\n"
+        string = ""
 
-        string += self.__write_assign_local_var(self.__div_temp_2,
-                                                ecx_register.name) + "\n"
+        string += \
+            self.__write_push_state()
 
-        string += self.__write_assign_local_var(self.__div_temp_3,
-                                                edx_register.name) + "\n"
+        string += \
+            self.__write_mov_to_register(eax_register.name,
+                                         dev_operation.get_dest_temp().get_value().name) + "\n"
 
-        string += self.__write_mov_to_register(eax_register.name,
-                                               dev_operation.get_dest_temp().get_value().name) + "\n"
+        string += \
+            self.__write_mov_to_register(ecx_register.name,
+                                         dev_operation.get_src_temp().get_value().name) + "\n"
 
-        string += self.__write_mov_to_register(ecx_register.name,
-                                               dev_operation.get_src_temp().get_value().name) + "\n"
+        string += \
+            self.__write_idev(ecx_register.name) + "\n"
 
-        string += self.__write_idev(dev_operation.get_src_temp().get_value().name) + "\n"
+        string += \
+            self.__write_assign_local_var(self.__div_temp_RES, eax_register.name) + "\n"
 
-        string += self.__write_assign_local_var(self.__div_temp_RES, eax_register.name) + "\n"
-
-        string += self.__write_mov_to_register(eax_register.name,
-                                               self.__div_temp_1) + "\n"
-
-        string += self.__write_mov_to_register(edx_register.name,
-                                               self.__div_temp_3) + "\n"
+        string += \
+            self.__write_pop_state()
 
         string += self.__write_mov_to_register(dev_operation.get_dest_temp().get_value().name,
                                                self.__div_temp_RES) + "\n"
@@ -561,11 +693,6 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         context.append_string(string)
 
-    @writer(IR.IR_Function)
-    def write(self, function, context):
-        for basic_block in function.get_all_basic_blocks():
-            self.write(basic_block, context)
-
     @writer(IR.IR_BasicBlock)
     def write(self, basic_block, context):
 
@@ -616,5 +743,54 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         string = \
             self.__write_exit(self.write(exit_statement.get_exit_code(), context)) + "\n"
+
+        context.append_string(string)
+
+    @writer(IR.IR_FunctionCall)
+    def write(self, function_call, context):
+
+        string = \
+            self.__write_call(function_call.get_name()) + "\n"
+
+        context.append_string(string)
+
+    @writer(IR.IR_ReturnFromFunction)
+    def write(self, return_from_function, context):
+
+        string = \
+            self.__write_ret() + "\n"
+
+        context.append_string(string)
+
+    @writer(IR.IR_ReturnFromFunctionValueTemp)
+    def write(self, return_from_function_value_temp, context):
+        register = RegistersType.eax
+        return register.name
+
+    @writer(IR.IR_PassParameterToFunction)
+    def write(self, function_call_parameters, context):
+
+        string = \
+            self.__write_pass_parameter_to_proc(self.write
+                                                (function_call_parameters.get_value(), context)) + "\n"
+
+        context.append_string(string)
+
+    @writer(IR.IR_ReturnFromFunctionValue)
+    def write(self, ir_return_from_function_value, context):
+        temp = ir_return_from_function_value.get_dest_temp()
+        return self.write(temp, context)
+
+    @writer(IR.IR_PushState)
+    def write(self, ir_push_state, context):
+        string = \
+            self.__write_push_state()
+
+        context.append_string(string)
+
+    @writer(IR.IR_PopState)
+    def write(self, ir_pop_state, context):
+        string = \
+            self.__write_pop_state()
 
         context.append_string(string)

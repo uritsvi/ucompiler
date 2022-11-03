@@ -1,4 +1,5 @@
-from AST import *
+from abc import abstractmethod
+import AST
 
 AST_visitor_methods = {}
 
@@ -29,146 +30,166 @@ def visitor(arg_type):
 
 class AST_Visitor:
     @abstractmethod
-    @visitor(AST_CodeBlock)
+    @visitor(AST.AST_Program)
+    def visit(self, program, context):
+        pass
+
+    @abstractmethod
+    @visitor(AST.AST_Function)
+    def visit(self, function, context):
+        pass
+
+    @abstractmethod
+    @visitor(AST.AST_CodeBlock)
     def visit(self, code_block, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Value)
+    @visitor(AST.AST_Value)
     def visit(self, code_block, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Integer)
+    @visitor(AST.AST_Integer)
     def visit(self, integer, context):
         pass
 
     @abstractmethod
-    @visitor(AST_ArrayCell)
+    @visitor(AST.AST_ArrayCell)
     def visit(self, get_value_from_array, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Variable)
+    @visitor(AST.AST_Variable)
     def visit(self, variable, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Array)
+    @visitor(AST.AST_Array)
     def visit(self, array, context):
         pass
 
     @abstractmethod
-    @visitor(AST_NewVariable)
-    def visit(self, new_variable, context):
-        pass
-
-    @abstractmethod
-    @visitor(AST_Expression)
+    @visitor(AST.AST_Expression)
     def visit(self, expression, context):
         pass
 
     @abstractmethod
-    @visitor(AST_DefVar)
+    @visitor(AST.AST_DefVar)
     def visit(self, def_var, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Assignment)
+    @visitor(AST.AST_Assignment)
     def visit(self, assignment, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Add_Operator)
+    @visitor(AST.AST_Add_Operator)
     def visit(self, add_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Sub_Operator)
+    @visitor(AST.AST_Sub_Operator)
     def visit(self, sub_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Mul_Operator)
+    @visitor(AST.AST_Mul_Operator)
     def visit(self, mul_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Div_Operator)
+    @visitor(AST.AST_Div_Operator)
     def visit(self, dev_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Remainder_Operator)
+    @visitor(AST.AST_Remainder_Operator)
     def visit(self, dev_res_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_LessOperatorAST)
+    @visitor(AST.AST_LessOperator)
     def visit(self, less_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_GreaterOperatorAST)
+    @visitor(AST.AST_GreaterOperator)
     def visit(self, greater_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_LessOperatorAST)
+    @visitor(AST.AST_LessOperator)
     def visit(self, equality_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_AndOperator)
+    @visitor(AST.AST_AndOperator)
     def visit(self, and_operator, context):
         pass
 
     @abstractmethod
-    @visitor(AST_IfStatement)
+    @visitor(AST.AST_IfStatement)
     def visit(self, if_statement, context):
         pass
 
     @abstractmethod
-    @visitor(AST_WhileLoopStatement)
+    @visitor(AST.AST_WhileLoopStatement)
     def visit(self, while_loop_statement, context):
         pass
 
     @abstractmethod
-    @visitor(AST_ElseStatement)
+    @visitor(AST.AST_ElseStatement)
     def visit(self, else_statement, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Condition)
+    @visitor(AST.AST_Condition)
     def visit(self, condition, context):
         pass
 
     @abstractmethod
-    @visitor(AST_ComplexCondition)
+    @visitor(AST.AST_ComplexCondition)
     def visit(self, condition, context):
         pass
 
     @abstractmethod
-    @visitor(AST_ReadLine)
+    @visitor(AST.AST_ReadLine)
     def visit(self, read_line_statement, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Print)
+    @visitor(AST.AST_Print)
     def visit(self, print_statement, context):
         pass
 
     @abstractmethod
-    @visitor(AST_PrintArray)
+    @visitor(AST.AST_PrintArray)
     def visit(self, print_array, context):
         pass
 
     @abstractmethod
-    @visitor(AST_PrintString)
+    @visitor(AST.AST_PrintString)
     def visit(self, print_statement, context):
         pass
 
     @abstractmethod
-    @visitor(AST_Exit)
+    @visitor(AST.AST_Exit)
     def visit(self, exit_statement, context):
+        pass
+
+    @abstractmethod
+    @visitor(AST.AST_FunctionCall)
+    def visit(self, function_call, context):
+        pass
+
+    @abstractmethod
+    @visitor(AST.AST_ReturnStatement)
+    def visit(self, return_statement, context):
+        pass
+
+    @abstractmethod
+    @visitor(AST.AST_FunctionCallReturnValue)
+    def visit(self, function_call_return_value, context):
         pass

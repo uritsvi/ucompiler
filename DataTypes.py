@@ -2,7 +2,6 @@ from abc import abstractmethod
 from typing import Final
 
 # constants
-
 INT_32_SIZE_IN_BITES: Final[int] = 4
 
 CHAR_SIZE_IN_BITES: Final[int] = 1
@@ -14,7 +13,25 @@ CHAR_PRINT_FORMAT: Final[str] = "\"%c\\n\""
 ARRAY_PRINT_FORMAT: Final[str] = "\"%s\\n\""
 
 
-class DataType:
+class FunctionRetType:
+    @abstractmethod
+    def is_compatible_with(self, value):
+        pass
+
+
+class void(FunctionRetType):
+    def is_compatible_with(self, value):
+        if value is None:
+            return True
+
+        return False
+
+
+class FunctionParameter:
+    pass
+
+
+class DataType(FunctionRetType, FunctionParameter):
     @abstractmethod
     def get_size_in_bites(self):
         pass
@@ -34,6 +51,12 @@ class int_32(DataType):
     def get_print_format(self):
         return INT_32_PRINT_FORMAT
 
+    def is_compatible_with(self, value):
+        if value is not None:
+            return True
+
+        return False
+
 
 class char(DataType):
     def __init__(self):
@@ -44,6 +67,12 @@ class char(DataType):
 
     def get_print_format(self):
         return CHAR_PRINT_FORMAT
+
+    def is_compatible_with(self, value):
+        if value is not None:
+            return True
+
+        return False
 
 
 class Array(DataType):
@@ -62,3 +91,9 @@ class Array(DataType):
 
     def get_print_format(self):
         return ARRAY_PRINT_FORMAT
+
+    def is_compatible_with(self, value):
+        if value is not None:
+            return True
+
+        return False

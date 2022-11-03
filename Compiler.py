@@ -23,9 +23,13 @@ class Compiler:
         ir_gen = IR.IR_Generator()
         ir_program = ir_gen.gen(main_AST)
 
-        main_function = ir_program.get_main_function()
+        all_function = ir_program.get_all_functions()
 
-        bb_text = main_function.write_basic_blocks()
+        bb_text = ""
+
+        for function in all_function:
+            bb_text += function.write_basic_blocks() + "\n"
+
         print(bb_text)
 
         asm = ASM_X86.ASM_X86_Generator()

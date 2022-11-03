@@ -6,17 +6,15 @@ includelib C:\masm32\lib\masm32.lib
 include C:\masm32\include\masm32rt.inc
 .code
 start:
-call main
-main proc
+call f_0
+invoke ExitProcess,0
+f_0 proc 
 LOCAL var_2:DWORD
 LOCAL var_3:DWORD
-LOCAL div_temp_1:DWORD
-LOCAL div_temp_2:DWORD
-LOCAL div_temp_3:DWORD
 LOCAL div_temp_res:DWORD
 LOCAL var_0[20]:DWORD
 LOCAL var_1[20]:DWORD
-program:
+L0:
 mov edx,10
 imul edx,4
 mov ecx,19
@@ -39,16 +37,16 @@ imul ecx,edx
 mov edx,ecx
 mov ecx,38
 cmp edx,ecx
-jne L1
-jmp L0
-L1:
+jne L2
+jmp L1
+L2:
 invoke ExitProcess,1
-jmp L0
-L0:
+jmp L1
+L1:
 mov ecx,var_3
 mov edx,var_2
 imul ecx,edx
 printf("%d\n",ecx)
-invoke ExitProcess, 0
-main endp
+ret
+f_0 endp
 end start

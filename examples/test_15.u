@@ -1,15 +1,18 @@
-char a[10];
-
-char i = 0;
-while(i < 10)
+void main()
 {
-    a[i] = 'a';
+    char a[10];
 
-    i = i + 1;
+    char i = 0;
+    while(i < 10)
+    {
+        a[i] = 'a';
+
+        i = i + 1;
+    }
+
+    @read_line a, 9;
+    @print_array a;
+
+    @read_line a, 9;
+    @print_array a;
 }
-
-@read_line a, 9;
-@print_array a;
-
-@read_line a, 9;
-@print_array a;

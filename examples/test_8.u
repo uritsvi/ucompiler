@@ -1,11 +1,14 @@
-int_32 a = 9;
-int_32 b = 8;
+void main()
+{
+    int_32 a = 9;
+    int_32 b = 8;
 
-if(a != b)
-{
-    @print "hello!";
-}
-else
-{
-    @exit 1;
+    if(a != b)
+    {
+        @print "hello!";
+    }
+    else
+    {
+        @exit 1;
+    }
 }

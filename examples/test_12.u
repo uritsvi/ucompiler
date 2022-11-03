@@ -1,8 +1,11 @@
-char i = 'a';
-
-while(i < 'z' + 1)
+void main()
 {
-    @print i;
+    char i = 'a';
 
-    i = i + 1;
+    while(i < 'z' + 1)
+    {
+        @print i;
+
+        i = i + 1;
+    }
 }

@@ -9,6 +9,9 @@ import AST
 
 tokens = ('int_32_keyword',
           'char_keyword',
+          'void_keyword',
+
+          'return',
 
           'if_keyword',
           'else_keyword',
@@ -77,6 +80,19 @@ def t_char_keyword(t):
 
     t.value = DataTypes.char()
 
+    return t
+
+
+def t_void_keyword(t):
+    r"""void"""
+
+    t.value = DataTypes.void()
+
+    return t
+
+
+def t_return(t):
+    r"""return"""
     return t
 
 
@@ -189,7 +205,169 @@ precedence = (
 
 
 def p_program(p):
-    """program : code_block"""
+    """program : function_impl
+                | program function_impl"""
+
+    if len(p) == 2:
+        program = AST.AST_Program()
+        program.add_function(p[1])
+        p[0] = program
+    else:
+        p[1].add_function(p[2])
+        p[0] = p[1]
+
+
+def p_return_statement(p):
+    """return_statement : return return_value"""
+
+    return_value = p[2]
+
+    current_function =  \
+        SymbolTable.FunctionsTabel.get_instance().get_current_function()
+
+    current_function_prototype = \
+        current_function.get_function_prototype()
+
+    current_function_return_value_type = \
+        current_function_prototype.get_return_value_type()
+
+    res = \
+        current_function_return_value_type.is_compatible_with(return_value)
+
+    if not res:
+        Utils.Utils.handle_compiler_error("Try's to return incompatible value from function" + " " +
+                                          current_function_prototype.get_name() + " " + "in line" + " " +
+                                          str(p.lexer.lineno))
+
+    return_statement = AST.AST_ReturnStatement(return_value)
+
+    p[0] = return_statement
+
+
+def p_return_value(p):
+    """return_value : value
+                      | """
+
+    if len(p) == 2:
+        p[0] = p[1]
+        return
+
+    p[0] = None
+
+
+def p_function_parameters(p):
+    """function_impl_parameters :
+                                  | data_type new_function_parameter_name
+                                  | function_impl_parameters comma data_type new_function_parameter_name"""
+    if len(p) == 1:
+        parameters = SymbolTable.FunctionParameters()
+
+    elif len(p) == 3:
+        parameters = SymbolTable.FunctionParameters()
+
+        new_parameter = \
+            SymbolTable.FunctionParameter(p[2], p[1])
+
+        parameters.add_parameter(new_parameter.get_name(), new_parameter)
+
+    else:
+        parameters = p[1]
+
+        new_parameter = \
+            SymbolTable.FunctionParameter(p[4], p[3])
+
+        parameters.add_parameter(new_parameter.get_name(), new_parameter)
+
+    p[0] = parameters
+
+
+def p_function_prototype_start(p):
+    """function_prototype_start : function_ret_type function_name"""
+
+    function_prototype = \
+        SymbolTable.SymbolTableFunctionPrototype(p[2], p[1])
+
+    SymbolTable.FunctionsTabel.get_instance().\
+        set_current_prototype(function_prototype)
+
+    p[0] = function_prototype
+
+
+def p_function_prototype(p):
+    """function_prototype : function_prototype_start open_parenthesise function_impl_parameters close_parenthesise """
+
+    function_prototype = p[1]
+    function_name = function_prototype.get_name()
+
+    function_prototype.set_parameters(p[3])
+
+    function_table_name = \
+        SymbolTable.FunctionsTabel.get_instance().map_function_name_to_table_name(function_name)
+
+    symbol_table_function = \
+        SymbolTable.SymbolTabelFunction(function_table_name, function_prototype)
+
+    SymbolTable.FunctionsTabel.get_instance().add_function(symbol_table_function)
+
+    p[0] = symbol_table_function
+
+
+def p_function_call_parameters(p):
+    """function_call_parameters :
+                                | value
+                                | function_call_parameters comma value"""
+
+    if len(p) == 1:
+        parameters = SymbolTable.FunctionCallParameters()
+        p[0] = parameters
+    elif len(p) == 2:
+        parameters = SymbolTable.FunctionCallParameters()
+
+        parameters.add_parameter(p[1])
+
+        p[0] = parameters
+    else:
+        parameters = p[1]
+
+        parameters.add_parameter(p[3])
+
+        p[0] = parameters
+
+
+def p_function_call(p):
+    """function_call : function_name open_parenthesise function_call_parameters close_parenthesise"""
+
+    function_name = p[1]
+    parameters = p[3]
+
+    if not parameters.is_matching_function_parameters_list(function_name):
+        Utils.Utils.handle_compiler_error("function call dose not match parameters list in line" + " " + str(p.lexer.lineno))
+        return
+
+    function_table_name = \
+        SymbolTable.FunctionsTabel.get_instance().get_function_tabel_name(function_name)
+
+    function_call = \
+        AST.AST_FunctionCall(function_table_name, parameters)
+
+    p[0] = function_call
+
+
+def p_function_impl(p):
+    """function_impl :  function_prototype open_curly_brackets code_block close_curly_brackets"""
+
+    function = p[1]
+    code_block = p[3]
+
+    ast_function = \
+        AST.AST_Function(function, code_block)
+
+    p[0] = ast_function
+
+
+def p_function_ret_type(p):
+    """function_ret_type : data_type
+                           | void_keyword"""
 
     p[0] = p[1]
 
@@ -212,19 +390,21 @@ def p_code_block(p):
 
 
 def p_statement(p):
-    """statement : basic_block_command
+    """statement : basic_block_command semicolon
                    | block"""
 
     p[0] = p[1]
 
 
 def p_basic_block_command(p):
-    """basic_block_command : def_var semicolon
-                             | def_array semicolon
-                             | int_assignment semicolon
-                             | print_statement semicolon
-                             | read_line_statement semicolon
-                             | exit_statement semicolon"""
+    """basic_block_command : def_var
+                             | def_array
+                             | int_assignment
+                             | print_statement
+                             | read_line_statement
+                             | exit_statement
+                             | function_call
+                             | return_statement"""
 
     p[0] = p[1]
 
@@ -239,7 +419,8 @@ def p_block(p):
 def p_scope_start(p):
     """scope_start : open_curly_brackets"""
 
-    SymbolTable.Tables.get_instance().push_table()
+    SymbolTable.FunctionsTabel.get_instance().\
+        get_current_function().push_table()
 
     p[0] = p[1]
 
@@ -247,7 +428,8 @@ def p_scope_start(p):
 def p_scope_end(p):
     """scope_end : close_curly_brackets"""
 
-    SymbolTable.Tables.get_instance().pop_top_table()
+    SymbolTable.FunctionsTabel.get_instance(). \
+        get_current_function().pop_table()
 
     p[0] = p[1]
 
@@ -285,7 +467,7 @@ def p_complex_condition(p):
 def p_or_condition(p):
     """or_condition : condition or_operator simple_condition"""
 
-    AST_condition = AST.AST_ComplexCondition(p[1], AST.AST_OrOperatorAST(), p[3])
+    AST_condition = AST.AST_ComplexCondition(p[1], AST.AST_OrOperator(), p[3])
     p[0] = AST_condition
 
 
@@ -305,27 +487,27 @@ def p_condition_in_parenthesise(p):
 def p_les_condition(p):
     """les_condition : expression less_operator expression"""
 
-    AST_Condition = AST.AST_Condition(p[1], AST.AST_LessOperatorAST(), p[3])
+    AST_Condition = AST.AST_Condition(p[1], AST.AST_LessOperator(), p[3])
     p[0] = AST_Condition
 
 
 def p_greater_condition(p):
     """grater_condition : expression greater_operator expression"""
 
-    AST_Condition = AST.AST_Condition(p[1], AST.AST_GreaterOperatorAST(), p[3])
+    AST_Condition = AST.AST_Condition(p[1], AST.AST_GreaterOperator(), p[3])
     p[0] = AST_Condition
 
 
 def p_equality_condition(p):
     """equality_condition : expression equality_operator expression"""
 
-    AST_Condition = AST.AST_Condition(p[1], AST.AST_EqualityOperatorAST(), p[3])
+    AST_Condition = AST.AST_Condition(p[1], AST.AST_EqualityOperator(), p[3])
     p[0] = AST_Condition
 
 
 def p_not_equals_condition(p):
     """not_equals_condition : expression not_equals_operator expression"""
-    AST_Condition = AST.AST_Condition(p[1], AST.AST_NotEqualsOperatorAST(), p[3])
+    AST_Condition = AST.AST_Condition(p[1], AST.AST_NotEqualsOperator(), p[3])
     p[0] = AST_Condition
 
 
@@ -367,16 +549,16 @@ def p_def_var(p):
                  | data_type new_var_name equals_operator value"""
 
     data_type = p[1]
-    new_var = p[2]
+    var = AST.AST_Variable(p[2], data_type)
 
-    SymbolTable.Tables.get_instance().get_current_table().\
-        add_var(new_var.get_name(), data_type)
+    SymbolTable.FunctionsTabel.get_instance().get_current_tabel().\
+        add_var(var.get_name(), data_type)
 
     if len(p) == 3:
-        AST_assignment = AST.AST_Assignment(new_var, AST.AST_Integer(0, data_type))
+        AST_assignment = AST.AST_Assignment(var, AST.AST_Integer(0, data_type))
         AST_def_var = AST.AST_DefVar(p[2], AST_assignment)
     else:
-        AST_assignment = AST.AST_Assignment(p[2], p[4])
+        AST_assignment = AST.AST_Assignment(var, p[4])
         AST_def_var = AST.AST_DefVar(p[2], AST_assignment)
 
     p[0] = AST_def_var
@@ -397,8 +579,8 @@ def p_def_array(p):
 
     data_type = DataTypes.Array(data_type, array_len)
 
-    SymbolTable.Tables.get_instance().get_current_table().\
-        add_array(new_var.get_name(), data_type)
+    SymbolTable.FunctionsTabel.get_instance().get_current_tabel().\
+        add_array(new_var, data_type)
 
 
 def p_array_cell(p):
@@ -446,8 +628,24 @@ def p_value(p):
     p[0] = p[1]
 
 
+def p_function_call_value(p):
+    """function_call_value : function_call"""
+
+    function_call = p[1]
+    function_name = function_call.get_name()
+
+    function_data_type = SymbolTable.FunctionsTabel.get_instance().\
+        get_function(function_name).get_function_prototype().get_return_value_type()
+
+    AST_function_call_return_value = \
+        AST.AST_FunctionCallReturnValue(function_call, function_data_type)
+
+    p[0] = AST_function_call_return_value
+
+
 def p_int_expression(p):
     """int_expression :  simple_int_value
+                        | function_call_value
                         | array_cell
                         | int_expression_in_parenthesise
                         | var_name
@@ -456,6 +654,14 @@ def p_int_expression(p):
                         | mul_expression
                         | dev_expression
                         | dev_rest_expression"""
+
+    value = p[1]
+
+    res = value.get_data_type().\
+        is_compatible_with(DataTypes.int_32())
+
+    if not res:
+        Utils.Utils.handle_compiler_error("Values are not compatible at line" + " " + str(p.lexer.lineno))
 
     p[0] = p[1]
 
@@ -520,18 +726,21 @@ def p_dev_rest_expression(p):
 def p_var_name(p):
     """var_name : name"""
 
-    res = SymbolTable.Tables.get_instance().\
-        get_current_table().var_accessible_in_scope(p[1])
+    current_tabel =\
+        SymbolTable.FunctionsTabel.get_instance().get_current_tabel()
+
+    res = \
+        current_tabel.var_accessible_in_scope(p[1])
 
     if not res:
         Utils.Utils.handle_compiler_error("Var " + p[1] + " dose not exist in current scope")
         return
     else:
         var_name = \
-            SymbolTable.Tables.get_instance().get_current_table().get_var_name(p[1])
+            current_tabel.get_var_name(p[1])
 
         var_data_type = \
-            SymbolTable.Tables.get_instance().get_current_table().get_var(var_name)
+            current_tabel.get_var(var_name)
 
     AST_var = AST.AST_Variable(var_name, var_data_type.get_data_type())
     p[0] = AST_var
@@ -540,8 +749,11 @@ def p_var_name(p):
 def p_array_name(p):
     """array_name : name"""
 
-    res = SymbolTable.Tables.get_instance().\
-        get_current_table().array_accessible_in_scope(p[1])
+    current_tabel =\
+        SymbolTable.FunctionsTabel.get_instance().get_current_tabel()
+
+    res = current_tabel\
+        .array_accessible_in_scope(p[1])
 
     if not res:
         Utils.Utils.handle_compiler_error("Array " + p[1] + " dose not exist in current scope")
@@ -549,30 +761,49 @@ def p_array_name(p):
 
     else:
         var_name = \
-            SymbolTable.Tables.get_instance().get_current_table().get_var_name(p[1])
+            current_tabel.get_var_name(p[1])
 
         var_data_type = \
-            SymbolTable.Tables.get_instance().get_current_table().get_array(var_name)
+            current_tabel.get_array(var_name)
 
     AST_var = AST.AST_Array(var_name, var_data_type)
     p[0] = AST_var
 
 
+def p_new_function_parameter_name(p):
+    """new_function_parameter_name : name"""
+
+    new_name = p[1]
+
+    table_name = SymbolTable.FunctionsTabel.get_instance().get_current_prototype().\
+        map_arg_name_to_table_name(new_name)
+
+    p[0] = table_name
+
+
 def p_new_var_name(p):
     """new_var_name : name"""
 
-    res = SymbolTable.Tables.get_instance().\
-        get_current_table().var_exist_in_scope(p[1])
+    current_tabel =\
+        SymbolTable.FunctionsTabel.get_instance().get_current_tabel()
+
+    res = \
+        current_tabel.var_exist_in_scope(p[1])
 
     if res:
         Utils.Utils.handle_compiler_error("Var " + p[1] + " already exist in current scope")
         return
 
     var_name = \
-        SymbolTable.Tables.get_instance().get_current_table().map_var_name_to_symbol_tabel_name(p[1])
+        current_tabel.map_var_name_to_symbol_tabel_name(p[1])
 
-    AST_new_var = AST.AST_NewVariable(var_name)
-    p[0] = AST_new_var
+    p[0] = var_name
+
+
+def p_function_name(p):
+    """function_name : name"""
+
+    p[0] = p[1]
 
 
 def p_exit(p):
@@ -616,7 +847,7 @@ def p_print_string(p):
 
 def p_error(p):
     Utils.Utils.handle_compiler_error("Failed to parse tokens in line" + " " +
-                                      str(p.lineno) + " " + "token" + " " + "\"" + p.value + "\"")
+                                      str(p.lineno) + " " + "token" + " " + "\"" + str(p.value) + "\"")
 
     p[0] = None
 

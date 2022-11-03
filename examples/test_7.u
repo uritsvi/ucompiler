@@ -1,11 +1,14 @@
-int_32 a = 5;
-int_32 b = 6;
+void main()
+{
+    int_32 a = 5;
+    int_32 b = 6;
 
-if(a > 4 && (a < 5 || b == 6))
-{
-    @print "hello\n";
-}
-else
-{
-    @exit 1;
+    if(a > 4 && (a < 5 || b == 6))
+    {
+        @print "hello\n";
+    }
+    else
+    {
+        @exit 1;
+    }
 }

@@ -30,6 +30,15 @@ def writer(arg_type):
 
 
 class IR_Writer:
+    @abstractmethod
+    @writer(IR.IR_Program)
+    def write(self, program, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_Function)
+    def write(self, function, context):
+        pass
 
     @abstractmethod
     @writer(IR.IR_Label)
@@ -37,7 +46,7 @@ class IR_Writer:
         pass
 
     @abstractmethod
-    @writer(IR.IR_Function_SymbolTabel)
+    @writer(IR.IR_SymbolTabel)
     def write(self, symbol_table, context):
         pass
 
@@ -71,6 +80,7 @@ class IR_Writer:
     def write(self, assign_temp, context):
         pass
 
+    @abstractmethod
     @writer(IR.IR_ArrayCell)
     def write(self, get_value_from_array, context):
         pass
@@ -106,12 +116,12 @@ class IR_Writer:
         pass
 
     @abstractmethod
-    @writer(IR.IR_DevOperation)
+    @writer(IR.IR_DivOperation)
     def writ(self, dev_operation, context):
         pass
 
     @abstractmethod
-    @writer(IR.IR_DevRestOperation)
+    @writer(IR.IR_DivRestOperation)
     def write(self, dev_res_operation, context):
         pass
 
@@ -151,11 +161,6 @@ class IR_Writer:
         pass
 
     @abstractmethod
-    @writer(IR.IR_Function)
-    def write(self, function, context):
-        pass
-
-    @abstractmethod
     @writer(IR.IR_BasicBlock)
     def write(self, basic_block, context):
         pass
@@ -176,11 +181,51 @@ class IR_Writer:
         pass
 
     @abstractmethod
-    @writer(IR.AST_PrintString)
+    @writer(IR.IR_PrintString)
     def write(self, print_string, context):
         pass
 
     @abstractmethod
     @writer(IR.IR_Exit)
     def write(self, exit_statement, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_FunctionCall)
+    def write(self, function_call, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_ReturnFromFunction)
+    def write(self, return_from_function, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_DefReturnFromFunctionValueTemp)
+    def write(self, def_return_from_value_function_temp, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_ReturnFromFunctionValueTemp)
+    def write(self, return_from_function_value_temp):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_PassParameterToFunction)
+    def write(self, function_call_parameters, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_ReturnFromFunctionValue)
+    def write(self, ir_return_from_function_value, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_PushState)
+    def write(self, ir_push_state, context):
+        pass
+
+    @abstractmethod
+    @writer(IR.IR_PopState)
+    def write(self, ir_pop_state, context):
         pass
