@@ -95,7 +95,7 @@ void a(char a)
     @print a;
 }
 
-defines a function the can receive values, return value and execute code.
+Defines a function the can receive values, return value and execute code.
 
 10. function return type
 void - return nothing
@@ -105,7 +105,7 @@ every data type
 Example:
 int_32 a = mul(10, 20);
 
-calls a defined function, if the function returns a value the functions call is treated like a regular value
+Calls a defined function, if the function returns a value the functions call is treated like a regular value
 
 
 
