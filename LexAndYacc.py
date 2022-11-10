@@ -13,6 +13,8 @@ tokens = ('int_32_keyword',
 
           'return',
 
+          'assert',
+
           'if_keyword',
           'else_keyword',
           'while_keyword',
@@ -33,10 +35,11 @@ tokens = ('int_32_keyword',
           'name',
 
           'equals_operator',
-
+            
+          'asterisk', 
+            
           'add_operator',
           'sub_operator',
-          'mul_operator',
           'dev_operator',
           'dev_rest_operator',
 
@@ -59,6 +62,12 @@ tokens = ('int_32_keyword',
           'comma',
 
           'new_line')
+
+
+def t_assert(t):
+    r"""@assert"""
+
+    return t
 
 
 def t_new_line(t):
@@ -179,7 +188,7 @@ t_equals_operator = r'='
 
 t_add_operator = r'\+'
 t_sub_operator = r'\-'
-t_mul_operator = r'\*'
+t_asterisk = r'\*'
 t_dev_operator = r'/'
 
 t_and_operator = r'&&'
@@ -196,12 +205,12 @@ t_ignore = " "
 
 
 def t_error(t):
-    Utils.Utils.handle_compiler_error(t.value + "Is not matching any token")
+    Utils.Utils.handle_compiler_error(t.value + " " + "Is not matching any token in line" + " " + str(t.lineno))
 
 
 precedence = (
     ('left', 'add_operator', 'sub_operator'),
-    ('left', 'mul_operator', 'dev_operator', 'dev_rest_operator'))
+    ('left', 'asterisk', 'dev_operator', 'dev_rest_operator'))
 
 
 def p_program(p):
@@ -242,6 +251,19 @@ def p_return_statement(p):
     return_statement = AST.AST_ReturnStatement(return_value)
 
     p[0] = return_statement
+
+
+def p_assert_statement(p):
+    """assert_statement : assert value comma value"""
+
+    then_part = AST.AST_CodeBlock()
+    then_part.add_statement(AST.AST_PrintString("Assertion failed! in line" + " " + str(p.lexer.lineno)))
+    then_part.add_statement(AST.AST_Exit(AST.AST_Integer(1, DataTypes.int_32())))
+
+    condition = AST.AST_Condition(p[2], AST.AST_NotEqualsOperator(), p[4])
+    if_statement = AST.AST_IfStatement(condition, then_part, None)
+
+    p[0] = if_statement
 
 
 def p_return_value(p):
@@ -404,7 +426,8 @@ def p_basic_block_command(p):
                              | read_line_statement
                              | exit_statement
                              | function_call
-                             | return_statement"""
+                             | return_statement
+                             | assert_statement"""
 
     p[0] = p[1]
 
@@ -697,7 +720,7 @@ def p_sub_expression(p):
 
 
 def p_mul_expression(p):
-    """mul_expression : expression mul_operator expression"""
+    """mul_expression : expression asterisk expression"""
 
     AST_MulExpression = AST.AST_Expression(p[1], AST.AST_Mul_Operator(), p[3])
     p[0] = AST_MulExpression
