@@ -782,34 +782,36 @@ class IR_Generator(AST_Visitor):
         expression_2 = self.visit(expression.get_expression_2(), context)
 
         def_dest_temp = IR_DefTemp()
-        def_src_temp = IR_DefTemp()
+        #def_src_temp = IR_DefTemp()
 
         dest_temp = def_dest_temp.get_temp()
-        src_temp = def_src_temp.get_temp()
+        #src_temp = def_src_temp.get_temp()
 
         current_function = \
             context.get_current_function()
 
-        assign_dest_temp = IR_AssignTemp(dest_temp, expression_1)
         current_function.get_current_basic_block().add_statement(def_dest_temp)
+        assign_dest_temp = IR_AssignTemp(dest_temp, expression_1)
         current_function.get_current_basic_block().add_statement(assign_dest_temp)
 
+        """
         assign_src_temp = IR_AssignTemp(src_temp, expression_2)
         current_function.get_current_basic_block().add_statement(def_src_temp)
         assign_src_temp.add_free_operation(current_function.get_current_basic_block())
+        """
 
         operation = \
             self.visit(expression.get_operator(), context)
 
-        operation.set_temps(dest_temp, src_temp)
+        operation.set_temps(dest_temp, expression_2)
 
-        current_function.get_current_basic_block().add_statement(assign_src_temp)
+        #current_function.get_current_basic_block().add_statement(assign_src_temp)
         assign_dest_temp.add_free_operation(current_function.get_current_basic_block())
 
         current_function.get_current_basic_block().add_statement(operation)
 
-        src_temp.add_free_operation(current_function.get_current_basic_block())
-        operation.add_free_operation(current_function.get_current_basic_block())
+        #src_temp.add_free_operation(current_function.get_current_basic_block())
+        #operation.add_free_operation(current_function.get_current_basic_block())
 
         return dest_temp
 

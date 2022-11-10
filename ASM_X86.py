@@ -144,7 +144,7 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         """
         The div_temps will hold the values of the eax edx and ecx registers  
         because the idiv operation changes the values of these registers. 
-        The result of the division will be stored in dev_res
+        The result of the division will be stored in div_res
         """
 
         self.__div_temp_RES: Final[str] = "div_temp_res"
@@ -277,7 +277,7 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         return string
 
     @classmethod
-    def __write_idev(cls, src_register_name):
+    def __write_idiv(cls, src_register_name):
         string = "cdq" + "\n" + \
                  "idiv" + " " + src_register_name
         return string
@@ -553,17 +553,21 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
     @writer(IR.IR_AddOperation)
     def write(self, add_operation, context):
+        context.set_data_size(add_operation.get_src_temp().get_data_type().get_size_in_bites())
+
         string =\
-            self.__write_add(add_operation.get_dest_temp().get_value().name,
-                             add_operation.get_src_temp().get_value().name) + "\n"
+            self.__write_add(self.write(add_operation.get_dest_temp(), context),
+                             self.write(add_operation.get_src_temp(), context)) + "\n"
 
         context.append_string(string)
 
     @writer(IR.IR_SUbOperation)
     def write(self, sub_operation, context):
+        context.set_data_size(sub_operation.get_src_temp().get_data_type().get_size_in_bites())
+
         string = \
-            self.__write_sub(sub_operation.get_dest_temp().get_value().name,
-                             sub_operation.get_src_temp().get_value().name) + "\n"
+            self.__write_sub(self.write(sub_operation.get_dest_temp(), context),
+                             self.write(sub_operation.get_src_temp(), context)) + "\n"
 
         context.append_string(string)
 
@@ -578,9 +582,9 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         context.append_string(string)
 
     @writer(IR.IR_DivRestOperation)
-    def write(self, dev_rest_operation, context):
+    def write(self, div_rest_operation, context):
         eax_register = RegistersType.eax
-        ecx_register = RegistersType.ecx
+        ebx_register = RegistersType.ebx
         edx_register = RegistersType.edx
         string = ""
 
@@ -589,14 +593,14 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         string += \
             self.__write_mov_to_register(eax_register.name,
-                                         dev_rest_operation.get_dest_temp().get_value().name) + "\n"
+                                         div_rest_operation.get_dest_temp().get_value().name) + "\n"
 
         string += \
-            self.__write_mov_to_register(ecx_register.name,
-                                         dev_rest_operation.get_src_temp().get_value().name) + "\n"
+            self.__write_mov_to_register(ebx_register.name,
+                                         self.write(div_rest_operation.get_src_temp(), context)) + "\n"
 
         string += \
-            self.__write_idev(ecx_register.name) + "\n"
+            self.__write_idiv(ebx_register.name) + "\n"
 
         string += \
             self.__write_assign_local_var(self.__div_temp_RES, edx_register.name) + "\n"
@@ -604,15 +608,15 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         string += \
             self.__write_pop_state()
 
-        string += self.__write_mov_to_register(dev_rest_operation.get_dest_temp().get_value().name,
+        string += self.__write_mov_to_register(div_rest_operation.get_dest_temp().get_value().name,
                                                self.__div_temp_RES) + "\n"
 
         context.append_string(string)
 
     @writer(IR.IR_DivOperation)
-    def writ(self, dev_operation, context):
+    def writ(self, div_operation, context):
         eax_register = RegistersType.eax
-        ecx_register = RegistersType.ecx
+        ebx_register = RegistersType.ebx
 
         string = ""
 
@@ -621,14 +625,14 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         string += \
             self.__write_mov_to_register(eax_register.name,
-                                         dev_operation.get_dest_temp().get_value().name) + "\n"
+                                         div_operation.get_dest_temp().get_value().name) + "\n"
 
         string += \
-            self.__write_mov_to_register(ecx_register.name,
-                                         dev_operation.get_src_temp().get_value().name) + "\n"
+            self.__write_mov_to_register(ebx_register.name,
+                                         self.write(div_operation.get_src_temp(), context)) + "\n"
 
         string += \
-            self.__write_idev(ecx_register.name) + "\n"
+            self.__write_idiv(ebx_register.name) + "\n"
 
         string += \
             self.__write_assign_local_var(self.__div_temp_RES, eax_register.name) + "\n"
@@ -636,7 +640,7 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
         string += \
             self.__write_pop_state()
 
-        string += self.__write_mov_to_register(dev_operation.get_dest_temp().get_value().name,
+        string += self.__write_mov_to_register(div_operation.get_dest_temp().get_value().name,
                                                self.__div_temp_RES) + "\n"
 
         context.append_string(string)
