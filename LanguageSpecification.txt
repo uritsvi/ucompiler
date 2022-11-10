@@ -107,6 +107,9 @@ int_32 a = mul(10, 20);
 
 Calls a defined function, if the function returns a value the functions call is treated like a regular value
 
+12. @assert statement
+Example:
+@assert a, 2;
 
-
-
+Assert is an integrated macro that compeers the value of the first parameter
+to the second parameter and exit with error message if they are not equals
