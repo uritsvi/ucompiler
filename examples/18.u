@@ -12,6 +12,9 @@ void main()
         i = i + 1;
     }
 
+    @assert i, 10;
+    @assert n, 9;
+
     i = 2;
     while (i < n + 1)
     {
@@ -19,4 +22,7 @@ void main()
         @print i;
         i = i + 1;
     }
+
+    @assert i, 10;
+    @assert n, 9;
 }

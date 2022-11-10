@@ -3,16 +3,14 @@ void main()
     int_32 a = 5;
     int_32 c = 7;
 
-    while(c > 5)
+    while (c > 5)
     {
         a = a + 1;
         c = c - 1;
     }
 
-    if(a != 7 || c != 5)
-    {
-        @exit 1;
-    }
+    @assert c, 5;
+    @assert a, 7;
 
     @print a;
     @print c;

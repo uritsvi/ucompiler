@@ -6,8 +6,6 @@ void main()
     a = 5;
     b = a;
 
-    if(a != 5 || b != 5)
-    {
-        @exit 1;
-    }
+    @assert a, 5;
+    @assert b, 5;
 }

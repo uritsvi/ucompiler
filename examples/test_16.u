@@ -1,10 +1,10 @@
 void main()
-{   
+{
     int_32 data[100];
     int_32 i;
     int_32 sum;
 
-    while(i < 100)
+    while (i < 100)
     {
         data[i] = i;
 
@@ -13,7 +13,7 @@ void main()
 
     i = 0;
 
-    while(i < 100)
+    while (i < 100)
     {
         sum = sum + data[i];
 
@@ -23,4 +23,7 @@ void main()
     sum = sum / 100;
 
     @print sum;
+
+    @assert i, 100;
+    @assert sum, 49;
 }

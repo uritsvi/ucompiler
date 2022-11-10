@@ -3,12 +3,15 @@ void main()
     int_32 a = 9;
     int_32 b = 8;
 
-    if(a != b)
+    if (a != b)
     {
-        @print "hello!";
+        @print "hello!\n";
     }
     else
     {
         @exit 1;
     }
+
+    @assert a, 9;
+    @assert b, 8;
 }

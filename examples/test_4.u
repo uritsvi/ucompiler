@@ -1,17 +1,18 @@
-void main(){int_32 a;
-int_32 c;
-
-a = 5;
-c = 1;
-
-if(c > 2)
+void main()
 {
-    a = 6;
-}
+    int_32 a;
+    int_32 c;
 
-if(a != 5)
-{
-    @exit 1;
-}
+    a = 5;
+    c = 1;
 
-@print a;}
+    if (c > 2)
+    {
+        a = 6;
+    }
+
+    @assert c, 1;
+    @assert a, 5;
+
+    @print a;
+}

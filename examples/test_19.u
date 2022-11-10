@@ -8,20 +8,20 @@ void main()
     int_32 A[10];
     int_32 temp;
 
-    while(i < range)
+    while (i < range)
     {
         A[i] = range - i;
 
         i = i + 1;
     }
 
-    while(j < range - 1)
+    while (j < range - 1)
     {
         min = j;
         i = j + 1;
-        while(j < range)
+        while (j < range)
         {
-            if(A[i] < A[min])
+            if (A[i] < A[min])
             {
                 min = i;
                 @print min;
@@ -31,4 +31,10 @@ void main()
 
         j = j + 1;
     }
+
+    @assert i, 1;
+    @assert j, 11;
+    @assert range, 10;
+    @assert min, 1;
+    @assert temp, 0;
 }

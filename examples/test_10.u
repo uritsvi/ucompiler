@@ -2,10 +2,7 @@ void main()
 {
     int_32 a = 5 * (6 + 7);
 
-    if(a != 65)
-    {
-        @exit 1;
-    }
+    @assert a, 65;
 
     @print a;
 }

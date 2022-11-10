@@ -3,7 +3,7 @@ void main()
     int_32 a = 5;
     int_32 b = 6;
 
-    if(a > 4 && (a < 5 || b == 6))
+    if (a > 4 && (a < 5 || b == 6))
     {
         @print "hello\n";
     }
@@ -11,4 +11,7 @@ void main()
     {
         @exit 1;
     }
+
+    @assert a, 5;
+    @assert b, 6;
 }

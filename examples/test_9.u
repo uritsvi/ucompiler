@@ -2,10 +2,12 @@ void main()
 {
     int_32 a = 5 % 3;
 
-    if(a != 2)
+    if (a != 2)
     {
         @exit 1;
     }
 
     @print a;
+
+    @assert a, 2;
 }

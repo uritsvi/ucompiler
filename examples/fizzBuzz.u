@@ -2,21 +2,21 @@ void main()
 {
     int_32 i = 0;
 
-    while(i < 20)
+    while (i < 20)
     {
-        if((i % 3 == 0) && (i % 5 == 0))
+        if ((i % 3 == 0) && (i % 5 == 0))
         {
             @print "fizz buzz\n";
         }
         else
         {
-            if(i % 3 == 0)
+            if (i % 3 == 0)
             {
                 @print "fizz\n";
             }
             else
             {
-                if(i % 5 == 0)
+                if (i % 5 == 0)
                 {
                     @print "buzz\n";
                 }
@@ -29,4 +29,6 @@ void main()
 
         i = i + 1;
     }
-} 
+
+    @assert i, 20;
+}

@@ -2,13 +2,14 @@ void main()
 {
     int_32 a = 5;
 
-    if(a > 2)
+    if (a > 2)
     {
-        @print a;    
+        @print a;
+        @assert a, 5;
     }
     else
     {
+        @print "error\n";
         @exit 1;
-        @print "hello\n";
     }
 }
