@@ -6,6 +6,6 @@ void main()
     a = 5;
     b = a;
 
-    @assert a, 5;
-    @assert b, 5;
+    @assert a == 5;
+    @assert b == 5;
 }

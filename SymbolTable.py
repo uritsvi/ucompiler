@@ -36,10 +36,10 @@ class FunctionCallParameters:
 
     def is_matching_function_parameters_list(self, function_name):
         function_table_name = \
-            FunctionsTabel.get_instance().get_function_tabel_name(function_name)
+            FunctionsTable.get_instance().get_function_table_name(function_name)
 
         function_prototype = \
-            FunctionsTabel.get_instance().get_function(function_table_name).get_function_prototype()
+            FunctionsTable.get_instance().get_function(function_table_name).get_function_prototype()
 
         function_prototype_parameters = \
             function_prototype.get_parameters().get_all_parameters()
@@ -108,20 +108,20 @@ class SymbolTableFunctionPrototype:
         return table_name
 
 
-class SymbolTabelFunction:
+class SymbolTableFunction:
     def __init__(self, name, prototype):
         self.__name = name
-        self.__current_tabel = SymbolTable(None)
+        self.__current_table = SymbolTable(None)
         self.__prototype = prototype
 
         self.__vars_count = 0
 
         self.__tables = []
-        self.__tables.append(self.__current_tabel)
+        self.__tables.append(self.__current_table)
 
-        # When pop the current tabel the tables don't pop of this list
+        # When pop the current table the tables don't pop of this list
         self.__all_tables = []
-        self.__all_tables.append(self.__current_tabel)
+        self.__all_tables.append(self.__current_table)
 
         self.__has_body = False
 
@@ -142,14 +142,14 @@ class SymbolTabelFunction:
         return new_var_name
 
     def push_table(self):
-        self.__tables.append(SymbolTable(self.__current_tabel))
-        self.__all_tables.append(SymbolTable(self.__current_tabel))
+        self.__tables.append(SymbolTable(self.__current_table))
+        self.__all_tables.append(SymbolTable(self.__current_table))
 
     def pop_table(self):
         self.__tables.pop()
 
-    def get_current_tabel(self):
-        return self.__current_tabel
+    def get_current_table(self):
+        return self.__current_table
 
     def get_all_tables(self):
         return self.__all_tables
@@ -158,13 +158,13 @@ class SymbolTabelFunction:
         return self.__prototype
 
 
-class FunctionsTabel:
+class FunctionsTable:
     __instance = None
 
     @classmethod
     def get_instance(cls):
         if cls.__instance is None:
-            cls.__instance = FunctionsTabel()
+            cls.__instance = FunctionsTable()
 
         return cls.__instance
 
@@ -176,15 +176,15 @@ class FunctionsTabel:
 
         self.___current_function = None
 
-        self.__current_tabel = None
+        self.__current_table = None
         self.__current_prototype = None
 
     def add_function(self, function):
         self.__functions[function.get_name()] = function
         self.___current_function = function
 
-    def get_current_tabel(self):
-        current_label = self.___current_function.get_current_tabel()
+    def get_current_table(self):
+        current_label = self.___current_function.get_current_table()
         return current_label
 
     def get_current_function(self):
@@ -203,9 +203,9 @@ class FunctionsTabel:
 
         return new_name
 
-    def get_function_tabel_name(self, name):
-        tabel_name = self.__names[name]
-        return tabel_name
+    def get_function_table_name(self, name):
+        table_name = self.__names[name]
+        return table_name
 
     def get_function(self, name):
         function = self.__functions.get(name)
@@ -218,13 +218,13 @@ class FunctionsTabel:
         self.__current_prototype = prototype
 
 
-class SymbolTabelVar:
+class SymbolTableVar:
     @abstractmethod
     def get_name(self):
         pass
 
 
-class Var(SymbolTabelVar):
+class Var(SymbolTableVar):
     def __init__(self, name, data_type):
         self.__name = name
         self.__data_type = data_type
@@ -239,7 +239,7 @@ class Var(SymbolTabelVar):
         return self.__data_type
 
 
-class Array(SymbolTabelVar):
+class Array(SymbolTableVar):
     def __init__(self, name, data_type):
         self.__name = name
         self.__data_type = data_type
@@ -291,6 +291,11 @@ class SymbolTable:
 
         return var_name
 
+    def get_old_name(self, new_name):
+        for k,v in self.__old_names.items():
+            if v == new_name:
+                return k
+
     def get_array_name(self, name):
         array_name = self.__old_names.get(name)
 
@@ -319,7 +324,7 @@ class SymbolTable:
         if self.__parent is not None:
             var = self.__parent.get_var(name)
         else:
-            var = FunctionsTabel.get_instance().get_current_function().\
+            var = FunctionsTable.get_instance().get_current_function().\
                 get_function_prototype().get_parameters().get_parameter(name)
 
         return var
@@ -337,7 +342,7 @@ class SymbolTable:
             var_name = \
                 self.__parent.get_var_name(name)
         else:
-            var_name = FunctionsTabel.get_instance().get_current_function().\
+            var_name = FunctionsTable.get_instance().get_current_function().\
                 get_function_prototype().get_parameter_name(name)
 
         return var_name
@@ -353,7 +358,7 @@ class SymbolTable:
 
     def __var_accessible_in_parent_scope(self, name):
         if self.__parent is None:
-            if FunctionsTabel.get_instance().get_current_function().get_function_prototype().var_in_parameters(name):
+            if FunctionsTable.get_instance().get_current_function().get_function_prototype().var_in_parameters(name):
                 return True
 
             return False
@@ -396,8 +401,8 @@ class SymbolTable:
     def get_all_arrays(self):
         return self.__arrays.values()
 
-    def map_var_name_to_symbol_tabel_name(self, name):
-        new_name = FunctionsTabel.get_instance().\
+    def map_var_name_to_symbol_table_name(self, name):
+        new_name = FunctionsTable.get_instance().\
             get_current_function().get_new_var_name()
 
         self.__old_names[name] = new_name

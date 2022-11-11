@@ -1,0 +1,13 @@
+int_32 b()
+{
+    return 3;
+    int_32 a = 4;
+}
+
+void main()
+{
+    int_32 res = b();
+    @print res;
+
+    @assert res == 3;
+}

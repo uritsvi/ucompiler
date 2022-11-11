@@ -9,8 +9,8 @@ void main()
         c = c - 1;
     }
 
-    @assert c, 5;
-    @assert a, 7;
+    @assert c == 5;
+    @assert a == 7;
 
     @print a;
     @print c;

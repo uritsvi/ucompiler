@@ -10,7 +10,7 @@ Rule 0     S' -> program
 Rule 1     program -> function_impl
 Rule 2     program -> program function_impl
 Rule 3     return_statement -> return return_value
-Rule 4     assert_statement -> assert value comma value
+Rule 4     assert_statement -> assert condition
 Rule 5     return_value -> value
 Rule 6     return_value -> <empty>
 Rule 7     function_impl_parameters -> <empty>
@@ -120,7 +120,7 @@ char_value           : 66
 close_brackets       : 62 63
 close_curly_brackets : 16 36
 close_parenthesise   : 11 15 49 54 55 57 83
-comma                : 4 9 14 95
+comma                : 9 14 95
 dev_operator         : 87
 dev_rest_operator    : 88
 else_keyword         : 56
@@ -161,7 +161,7 @@ basic_block_command  : 22
 block                : 23
 code_block           : 16 20 37
 complex_condition    : 39
-condition            : 47 48 49 54 55 57
+condition            : 4 47 48 49 54 55 57
 condition_in_parenthesise : 44
 data_type            : 8 9 17 60 61 62
 def_array            : 25
@@ -209,7 +209,7 @@ simple_condition     : 38 47 48
 simple_int_value     : 62 72 95
 statement            : 19 20
 sub_expression       : 78
-value                : 4 4 5 13 14 61 63 64 100
+value                : 5 13 14 61 63 64 100
 var_name             : 68 76
 while_statement      : 34
 
@@ -362,7 +362,7 @@ state 11
     (94) exit_statement -> . exit int_expression
     (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
     (3) return_statement -> . return return_value
-    (4) assert_statement -> . assert value comma value
+    (4) assert_statement -> . assert condition
     (54) if_statement -> . if_keyword open_parenthesise condition close_parenthesise scope else_statement
     (55) if_statement -> . if_keyword open_parenthesise condition close_parenthesise scope
     (57) while_statement -> . while_keyword open_parenthesise condition close_parenthesise scope
@@ -498,7 +498,7 @@ state 15
     (94) exit_statement -> . exit int_expression
     (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
     (3) return_statement -> . return return_value
-    (4) assert_statement -> . assert value comma value
+    (4) assert_statement -> . assert condition
     (54) if_statement -> . if_keyword open_parenthesise condition close_parenthesise scope else_statement
     (55) if_statement -> . if_keyword open_parenthesise condition close_parenthesise scope
     (57) while_statement -> . while_keyword open_parenthesise condition close_parenthesise scope
@@ -865,9 +865,24 @@ state 39
 
 state 40
 
-    (4) assert_statement -> assert . value comma value
-    (70) value -> . int_value
-    (67) int_value -> . int_expression
+    (4) assert_statement -> assert . condition
+    (38) condition -> . simple_condition
+    (39) condition -> . complex_condition
+    (40) simple_condition -> . les_condition
+    (41) simple_condition -> . grater_condition
+    (42) simple_condition -> . equality_condition
+    (43) simple_condition -> . not_equals_condition
+    (44) simple_condition -> . condition_in_parenthesise
+    (45) complex_condition -> . and_condition
+    (46) complex_condition -> . or_condition
+    (50) les_condition -> . expression less_operator expression
+    (51) grater_condition -> . expression greater_operator expression
+    (52) equality_condition -> . expression equality_operator expression
+    (53) not_equals_condition -> . expression not_equals_operator expression
+    (49) condition_in_parenthesise -> . open_parenthesise condition close_parenthesise
+    (48) and_condition -> . condition and_operator simple_condition
+    (47) or_condition -> . condition or_operator simple_condition
+    (82) expression -> . int_expression
     (72) int_expression -> . simple_int_value
     (73) int_expression -> . function_call_value
     (74) int_expression -> . array_cell
@@ -891,17 +906,25 @@ state 40
     (88) dev_rest_expression -> . expression dev_rest_operator expression
     (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
     (90) array_name -> . name
-    (82) expression -> . int_expression
     (93) function_name -> . name
 
+    open_parenthesise shift and go to state 92
     int_32_value    shift and go to state 70
     char_value      shift and go to state 71
-    open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    value                          shift and go to state 81
-    int_value                      shift and go to state 79
-    int_expression                 shift and go to state 80
+    condition                      shift and go to state 81
+    simple_condition               shift and go to state 82
+    complex_condition              shift and go to state 83
+    les_condition                  shift and go to state 84
+    grater_condition               shift and go to state 85
+    equality_condition             shift and go to state 86
+    not_equals_condition           shift and go to state 87
+    condition_in_parenthesise      shift and go to state 88
+    and_condition                  shift and go to state 89
+    or_condition                   shift and go to state 90
+    expression                     shift and go to state 91
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -914,7 +937,6 @@ state 40
     dev_rest_expression            shift and go to state 69
     function_call                  shift and go to state 72
     array_name                     shift and go to state 36
-    expression                     shift and go to state 75
     function_name                  shift and go to state 38
 
 state 41
@@ -922,14 +944,14 @@ state 41
     (54) if_statement -> if_keyword . open_parenthesise condition close_parenthesise scope else_statement
     (55) if_statement -> if_keyword . open_parenthesise condition close_parenthesise scope
 
-    open_parenthesise shift and go to state 82
+    open_parenthesise shift and go to state 94
 
 
 state 42
 
     (57) while_statement -> while_keyword . open_parenthesise condition close_parenthesise scope
 
-    open_parenthesise shift and go to state 83
+    open_parenthesise shift and go to state 95
 
 
 state 43
@@ -978,13 +1000,13 @@ state 45
     (82) expression -> . int_expression
     (93) function_name -> . name
 
-    string          shift and go to state 85
+    string          shift and go to state 97
     int_32_value    shift and go to state 70
     char_value      shift and go to state 71
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    value                          shift and go to state 84
+    value                          shift and go to state 96
     int_value                      shift and go to state 79
     int_expression                 shift and go to state 80
     simple_int_value               shift and go to state 60
@@ -1009,7 +1031,7 @@ state 46
 
     name            shift and go to state 57
 
-    array_name                     shift and go to state 86
+    array_name                     shift and go to state 98
 
 state 47
 
@@ -1027,8 +1049,8 @@ state 48
     (11) function_prototype -> function_prototype_start open_parenthesise function_impl_parameters . close_parenthesise
     (9) function_impl_parameters -> function_impl_parameters . comma data_type new_function_parameter_name
 
-    close_parenthesise shift and go to state 87
-    comma           shift and go to state 88
+    close_parenthesise shift and go to state 99
+    comma           shift and go to state 100
 
 
 state 49
@@ -1036,9 +1058,9 @@ state 49
     (8) function_impl_parameters -> data_type . new_function_parameter_name
     (91) new_function_parameter_name -> . name
 
-    name            shift and go to state 90
+    name            shift and go to state 102
 
-    new_function_parameter_name    shift and go to state 89
+    new_function_parameter_name    shift and go to state 101
 
 state 50
 
@@ -1093,8 +1115,8 @@ state 53
     (62) def_array -> data_type new_var_name . open_brackets simple_int_value close_brackets
 
     semicolon       reduce using rule 60 (def_var -> data_type new_var_name .)
-    equals_operator shift and go to state 91
-    open_brackets   shift and go to state 92
+    equals_operator shift and go to state 103
+    open_brackets   shift and go to state 104
 
 
 state 54
@@ -1142,7 +1164,7 @@ state 55
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    value                          shift and go to state 93
+    value                          shift and go to state 105
     int_value                      shift and go to state 79
     int_expression                 shift and go to state 80
     simple_int_value               shift and go to state 60
@@ -1164,7 +1186,7 @@ state 56
 
     (95) read_line_statement -> read_line array_name . comma simple_int_value
 
-    comma           shift and go to state 94
+    comma           shift and go to state 106
 
 
 state 57
@@ -1212,7 +1234,7 @@ state 58
     name            shift and go to state 74
 
     array_name                     shift and go to state 36
-    value                          shift and go to state 95
+    value                          shift and go to state 107
     int_value                      shift and go to state 79
     int_expression                 shift and go to state 80
     simple_int_value               shift and go to state 60
@@ -1252,13 +1274,13 @@ state 60
     asterisk        reduce using rule 72 (int_expression -> simple_int_value .)
     dev_operator    reduce using rule 72 (int_expression -> simple_int_value .)
     dev_rest_operator reduce using rule 72 (int_expression -> simple_int_value .)
-    comma           reduce using rule 72 (int_expression -> simple_int_value .)
-    close_brackets  reduce using rule 72 (int_expression -> simple_int_value .)
-    close_parenthesise reduce using rule 72 (int_expression -> simple_int_value .)
     less_operator   reduce using rule 72 (int_expression -> simple_int_value .)
     greater_operator reduce using rule 72 (int_expression -> simple_int_value .)
     equality_operator reduce using rule 72 (int_expression -> simple_int_value .)
     not_equals_operator reduce using rule 72 (int_expression -> simple_int_value .)
+    close_brackets  reduce using rule 72 (int_expression -> simple_int_value .)
+    close_parenthesise reduce using rule 72 (int_expression -> simple_int_value .)
+    comma           reduce using rule 72 (int_expression -> simple_int_value .)
     and_operator    reduce using rule 72 (int_expression -> simple_int_value .)
     or_operator     reduce using rule 72 (int_expression -> simple_int_value .)
 
@@ -1273,13 +1295,13 @@ state 61
     asterisk        reduce using rule 73 (int_expression -> function_call_value .)
     dev_operator    reduce using rule 73 (int_expression -> function_call_value .)
     dev_rest_operator reduce using rule 73 (int_expression -> function_call_value .)
-    comma           reduce using rule 73 (int_expression -> function_call_value .)
-    close_brackets  reduce using rule 73 (int_expression -> function_call_value .)
-    close_parenthesise reduce using rule 73 (int_expression -> function_call_value .)
     less_operator   reduce using rule 73 (int_expression -> function_call_value .)
     greater_operator reduce using rule 73 (int_expression -> function_call_value .)
     equality_operator reduce using rule 73 (int_expression -> function_call_value .)
     not_equals_operator reduce using rule 73 (int_expression -> function_call_value .)
+    close_brackets  reduce using rule 73 (int_expression -> function_call_value .)
+    close_parenthesise reduce using rule 73 (int_expression -> function_call_value .)
+    comma           reduce using rule 73 (int_expression -> function_call_value .)
     and_operator    reduce using rule 73 (int_expression -> function_call_value .)
     or_operator     reduce using rule 73 (int_expression -> function_call_value .)
 
@@ -1294,13 +1316,13 @@ state 62
     asterisk        reduce using rule 74 (int_expression -> array_cell .)
     dev_operator    reduce using rule 74 (int_expression -> array_cell .)
     dev_rest_operator reduce using rule 74 (int_expression -> array_cell .)
-    comma           reduce using rule 74 (int_expression -> array_cell .)
-    close_brackets  reduce using rule 74 (int_expression -> array_cell .)
-    close_parenthesise reduce using rule 74 (int_expression -> array_cell .)
     less_operator   reduce using rule 74 (int_expression -> array_cell .)
     greater_operator reduce using rule 74 (int_expression -> array_cell .)
     equality_operator reduce using rule 74 (int_expression -> array_cell .)
     not_equals_operator reduce using rule 74 (int_expression -> array_cell .)
+    close_brackets  reduce using rule 74 (int_expression -> array_cell .)
+    close_parenthesise reduce using rule 74 (int_expression -> array_cell .)
+    comma           reduce using rule 74 (int_expression -> array_cell .)
     and_operator    reduce using rule 74 (int_expression -> array_cell .)
     or_operator     reduce using rule 74 (int_expression -> array_cell .)
 
@@ -1315,13 +1337,13 @@ state 63
     asterisk        reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
     dev_operator    reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
     dev_rest_operator reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
-    comma           reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
-    close_brackets  reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
-    close_parenthesise reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
     less_operator   reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
     greater_operator reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
     equality_operator reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
     not_equals_operator reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
+    close_brackets  reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
+    close_parenthesise reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
+    comma           reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
     and_operator    reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
     or_operator     reduce using rule 75 (int_expression -> int_expression_in_parenthesise .)
 
@@ -1336,13 +1358,13 @@ state 64
     asterisk        reduce using rule 76 (int_expression -> var_name .)
     dev_operator    reduce using rule 76 (int_expression -> var_name .)
     dev_rest_operator reduce using rule 76 (int_expression -> var_name .)
-    comma           reduce using rule 76 (int_expression -> var_name .)
-    close_brackets  reduce using rule 76 (int_expression -> var_name .)
-    close_parenthesise reduce using rule 76 (int_expression -> var_name .)
     less_operator   reduce using rule 76 (int_expression -> var_name .)
     greater_operator reduce using rule 76 (int_expression -> var_name .)
     equality_operator reduce using rule 76 (int_expression -> var_name .)
     not_equals_operator reduce using rule 76 (int_expression -> var_name .)
+    close_brackets  reduce using rule 76 (int_expression -> var_name .)
+    close_parenthesise reduce using rule 76 (int_expression -> var_name .)
+    comma           reduce using rule 76 (int_expression -> var_name .)
     and_operator    reduce using rule 76 (int_expression -> var_name .)
     or_operator     reduce using rule 76 (int_expression -> var_name .)
 
@@ -1357,13 +1379,13 @@ state 65
     asterisk        reduce using rule 77 (int_expression -> add_expression .)
     dev_operator    reduce using rule 77 (int_expression -> add_expression .)
     dev_rest_operator reduce using rule 77 (int_expression -> add_expression .)
-    comma           reduce using rule 77 (int_expression -> add_expression .)
-    close_brackets  reduce using rule 77 (int_expression -> add_expression .)
-    close_parenthesise reduce using rule 77 (int_expression -> add_expression .)
     less_operator   reduce using rule 77 (int_expression -> add_expression .)
     greater_operator reduce using rule 77 (int_expression -> add_expression .)
     equality_operator reduce using rule 77 (int_expression -> add_expression .)
     not_equals_operator reduce using rule 77 (int_expression -> add_expression .)
+    close_brackets  reduce using rule 77 (int_expression -> add_expression .)
+    close_parenthesise reduce using rule 77 (int_expression -> add_expression .)
+    comma           reduce using rule 77 (int_expression -> add_expression .)
     and_operator    reduce using rule 77 (int_expression -> add_expression .)
     or_operator     reduce using rule 77 (int_expression -> add_expression .)
 
@@ -1378,13 +1400,13 @@ state 66
     asterisk        reduce using rule 78 (int_expression -> sub_expression .)
     dev_operator    reduce using rule 78 (int_expression -> sub_expression .)
     dev_rest_operator reduce using rule 78 (int_expression -> sub_expression .)
-    comma           reduce using rule 78 (int_expression -> sub_expression .)
-    close_brackets  reduce using rule 78 (int_expression -> sub_expression .)
-    close_parenthesise reduce using rule 78 (int_expression -> sub_expression .)
     less_operator   reduce using rule 78 (int_expression -> sub_expression .)
     greater_operator reduce using rule 78 (int_expression -> sub_expression .)
     equality_operator reduce using rule 78 (int_expression -> sub_expression .)
     not_equals_operator reduce using rule 78 (int_expression -> sub_expression .)
+    close_brackets  reduce using rule 78 (int_expression -> sub_expression .)
+    close_parenthesise reduce using rule 78 (int_expression -> sub_expression .)
+    comma           reduce using rule 78 (int_expression -> sub_expression .)
     and_operator    reduce using rule 78 (int_expression -> sub_expression .)
     or_operator     reduce using rule 78 (int_expression -> sub_expression .)
 
@@ -1399,13 +1421,13 @@ state 67
     asterisk        reduce using rule 79 (int_expression -> mul_expression .)
     dev_operator    reduce using rule 79 (int_expression -> mul_expression .)
     dev_rest_operator reduce using rule 79 (int_expression -> mul_expression .)
-    comma           reduce using rule 79 (int_expression -> mul_expression .)
-    close_brackets  reduce using rule 79 (int_expression -> mul_expression .)
-    close_parenthesise reduce using rule 79 (int_expression -> mul_expression .)
     less_operator   reduce using rule 79 (int_expression -> mul_expression .)
     greater_operator reduce using rule 79 (int_expression -> mul_expression .)
     equality_operator reduce using rule 79 (int_expression -> mul_expression .)
     not_equals_operator reduce using rule 79 (int_expression -> mul_expression .)
+    close_brackets  reduce using rule 79 (int_expression -> mul_expression .)
+    close_parenthesise reduce using rule 79 (int_expression -> mul_expression .)
+    comma           reduce using rule 79 (int_expression -> mul_expression .)
     and_operator    reduce using rule 79 (int_expression -> mul_expression .)
     or_operator     reduce using rule 79 (int_expression -> mul_expression .)
 
@@ -1420,13 +1442,13 @@ state 68
     asterisk        reduce using rule 80 (int_expression -> dev_expression .)
     dev_operator    reduce using rule 80 (int_expression -> dev_expression .)
     dev_rest_operator reduce using rule 80 (int_expression -> dev_expression .)
-    comma           reduce using rule 80 (int_expression -> dev_expression .)
-    close_brackets  reduce using rule 80 (int_expression -> dev_expression .)
-    close_parenthesise reduce using rule 80 (int_expression -> dev_expression .)
     less_operator   reduce using rule 80 (int_expression -> dev_expression .)
     greater_operator reduce using rule 80 (int_expression -> dev_expression .)
     equality_operator reduce using rule 80 (int_expression -> dev_expression .)
     not_equals_operator reduce using rule 80 (int_expression -> dev_expression .)
+    close_brackets  reduce using rule 80 (int_expression -> dev_expression .)
+    close_parenthesise reduce using rule 80 (int_expression -> dev_expression .)
+    comma           reduce using rule 80 (int_expression -> dev_expression .)
     and_operator    reduce using rule 80 (int_expression -> dev_expression .)
     or_operator     reduce using rule 80 (int_expression -> dev_expression .)
 
@@ -1441,13 +1463,13 @@ state 69
     asterisk        reduce using rule 81 (int_expression -> dev_rest_expression .)
     dev_operator    reduce using rule 81 (int_expression -> dev_rest_expression .)
     dev_rest_operator reduce using rule 81 (int_expression -> dev_rest_expression .)
-    comma           reduce using rule 81 (int_expression -> dev_rest_expression .)
-    close_brackets  reduce using rule 81 (int_expression -> dev_rest_expression .)
-    close_parenthesise reduce using rule 81 (int_expression -> dev_rest_expression .)
     less_operator   reduce using rule 81 (int_expression -> dev_rest_expression .)
     greater_operator reduce using rule 81 (int_expression -> dev_rest_expression .)
     equality_operator reduce using rule 81 (int_expression -> dev_rest_expression .)
     not_equals_operator reduce using rule 81 (int_expression -> dev_rest_expression .)
+    close_brackets  reduce using rule 81 (int_expression -> dev_rest_expression .)
+    close_parenthesise reduce using rule 81 (int_expression -> dev_rest_expression .)
+    comma           reduce using rule 81 (int_expression -> dev_rest_expression .)
     and_operator    reduce using rule 81 (int_expression -> dev_rest_expression .)
     or_operator     reduce using rule 81 (int_expression -> dev_rest_expression .)
 
@@ -1462,13 +1484,13 @@ state 70
     asterisk        reduce using rule 65 (simple_int_value -> int_32_value .)
     dev_operator    reduce using rule 65 (simple_int_value -> int_32_value .)
     dev_rest_operator reduce using rule 65 (simple_int_value -> int_32_value .)
-    comma           reduce using rule 65 (simple_int_value -> int_32_value .)
-    close_brackets  reduce using rule 65 (simple_int_value -> int_32_value .)
-    close_parenthesise reduce using rule 65 (simple_int_value -> int_32_value .)
     less_operator   reduce using rule 65 (simple_int_value -> int_32_value .)
     greater_operator reduce using rule 65 (simple_int_value -> int_32_value .)
     equality_operator reduce using rule 65 (simple_int_value -> int_32_value .)
     not_equals_operator reduce using rule 65 (simple_int_value -> int_32_value .)
+    close_brackets  reduce using rule 65 (simple_int_value -> int_32_value .)
+    close_parenthesise reduce using rule 65 (simple_int_value -> int_32_value .)
+    comma           reduce using rule 65 (simple_int_value -> int_32_value .)
     and_operator    reduce using rule 65 (simple_int_value -> int_32_value .)
     or_operator     reduce using rule 65 (simple_int_value -> int_32_value .)
 
@@ -1483,13 +1505,13 @@ state 71
     asterisk        reduce using rule 66 (simple_int_value -> char_value .)
     dev_operator    reduce using rule 66 (simple_int_value -> char_value .)
     dev_rest_operator reduce using rule 66 (simple_int_value -> char_value .)
-    comma           reduce using rule 66 (simple_int_value -> char_value .)
-    close_brackets  reduce using rule 66 (simple_int_value -> char_value .)
-    close_parenthesise reduce using rule 66 (simple_int_value -> char_value .)
     less_operator   reduce using rule 66 (simple_int_value -> char_value .)
     greater_operator reduce using rule 66 (simple_int_value -> char_value .)
     equality_operator reduce using rule 66 (simple_int_value -> char_value .)
     not_equals_operator reduce using rule 66 (simple_int_value -> char_value .)
+    close_brackets  reduce using rule 66 (simple_int_value -> char_value .)
+    close_parenthesise reduce using rule 66 (simple_int_value -> char_value .)
+    comma           reduce using rule 66 (simple_int_value -> char_value .)
     and_operator    reduce using rule 66 (simple_int_value -> char_value .)
     or_operator     reduce using rule 66 (simple_int_value -> char_value .)
 
@@ -1504,13 +1526,13 @@ state 72
     asterisk        reduce using rule 71 (function_call_value -> function_call .)
     dev_operator    reduce using rule 71 (function_call_value -> function_call .)
     dev_rest_operator reduce using rule 71 (function_call_value -> function_call .)
-    comma           reduce using rule 71 (function_call_value -> function_call .)
-    close_brackets  reduce using rule 71 (function_call_value -> function_call .)
-    close_parenthesise reduce using rule 71 (function_call_value -> function_call .)
     less_operator   reduce using rule 71 (function_call_value -> function_call .)
     greater_operator reduce using rule 71 (function_call_value -> function_call .)
     equality_operator reduce using rule 71 (function_call_value -> function_call .)
     not_equals_operator reduce using rule 71 (function_call_value -> function_call .)
+    close_brackets  reduce using rule 71 (function_call_value -> function_call .)
+    close_parenthesise reduce using rule 71 (function_call_value -> function_call .)
+    comma           reduce using rule 71 (function_call_value -> function_call .)
     and_operator    reduce using rule 71 (function_call_value -> function_call .)
     or_operator     reduce using rule 71 (function_call_value -> function_call .)
 
@@ -1549,7 +1571,7 @@ state 73
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    int_expression                 shift and go to state 96
+    int_expression                 shift and go to state 108
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -1577,13 +1599,13 @@ state 74
     asterisk        reduce using rule 89 (var_name -> name .)
     dev_operator    reduce using rule 89 (var_name -> name .)
     dev_rest_operator reduce using rule 89 (var_name -> name .)
-    comma           reduce using rule 89 (var_name -> name .)
-    close_brackets  reduce using rule 89 (var_name -> name .)
-    close_parenthesise reduce using rule 89 (var_name -> name .)
     less_operator   reduce using rule 89 (var_name -> name .)
     greater_operator reduce using rule 89 (var_name -> name .)
     equality_operator reduce using rule 89 (var_name -> name .)
     not_equals_operator reduce using rule 89 (var_name -> name .)
+    close_brackets  reduce using rule 89 (var_name -> name .)
+    close_parenthesise reduce using rule 89 (var_name -> name .)
+    comma           reduce using rule 89 (var_name -> name .)
     and_operator    reduce using rule 89 (var_name -> name .)
     or_operator     reduce using rule 89 (var_name -> name .)
     open_brackets   reduce using rule 90 (array_name -> name .)
@@ -1598,11 +1620,11 @@ state 75
     (87) dev_expression -> expression . dev_operator expression
     (88) dev_rest_expression -> expression . dev_rest_operator expression
 
-    add_operator    shift and go to state 97
-    sub_operator    shift and go to state 98
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
+    add_operator    shift and go to state 109
+    sub_operator    shift and go to state 110
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
 
 
 state 76
@@ -1647,8 +1669,8 @@ state 76
     name            shift and go to state 74
 
     function_name                  shift and go to state 38
-    function_call_parameters       shift and go to state 102
-    value                          shift and go to state 103
+    function_call_parameters       shift and go to state 114
+    value                          shift and go to state 115
     int_value                      shift and go to state 79
     int_expression                 shift and go to state 80
     simple_int_value               shift and go to state 60
@@ -1684,9 +1706,9 @@ state 79
     (70) value -> int_value .
 
     semicolon       reduce using rule 70 (value -> int_value .)
-    comma           reduce using rule 70 (value -> int_value .)
     close_brackets  reduce using rule 70 (value -> int_value .)
     close_parenthesise reduce using rule 70 (value -> int_value .)
+    comma           reduce using rule 70 (value -> int_value .)
 
 
 state 80
@@ -1695,9 +1717,9 @@ state 80
     (82) expression -> int_expression .
 
     semicolon       reduce using rule 67 (int_value -> int_expression .)
-    comma           reduce using rule 67 (int_value -> int_expression .)
     close_brackets  reduce using rule 67 (int_value -> int_expression .)
     close_parenthesise reduce using rule 67 (int_value -> int_expression .)
+    comma           reduce using rule 67 (int_value -> int_expression .)
     add_operator    reduce using rule 82 (expression -> int_expression .)
     sub_operator    reduce using rule 82 (expression -> int_expression .)
     asterisk        reduce using rule 82 (expression -> int_expression .)
@@ -1707,12 +1729,227 @@ state 80
 
 state 81
 
-    (4) assert_statement -> assert value . comma value
+    (4) assert_statement -> assert condition .
+    (48) and_condition -> condition . and_operator simple_condition
+    (47) or_condition -> condition . or_operator simple_condition
 
-    comma           shift and go to state 104
+    semicolon       reduce using rule 4 (assert_statement -> assert condition .)
+    and_operator    shift and go to state 116
+    or_operator     shift and go to state 117
 
 
 state 82
+
+    (38) condition -> simple_condition .
+
+    and_operator    reduce using rule 38 (condition -> simple_condition .)
+    or_operator     reduce using rule 38 (condition -> simple_condition .)
+    semicolon       reduce using rule 38 (condition -> simple_condition .)
+    close_parenthesise reduce using rule 38 (condition -> simple_condition .)
+
+
+state 83
+
+    (39) condition -> complex_condition .
+
+    and_operator    reduce using rule 39 (condition -> complex_condition .)
+    or_operator     reduce using rule 39 (condition -> complex_condition .)
+    semicolon       reduce using rule 39 (condition -> complex_condition .)
+    close_parenthesise reduce using rule 39 (condition -> complex_condition .)
+
+
+state 84
+
+    (40) simple_condition -> les_condition .
+
+    and_operator    reduce using rule 40 (simple_condition -> les_condition .)
+    or_operator     reduce using rule 40 (simple_condition -> les_condition .)
+    semicolon       reduce using rule 40 (simple_condition -> les_condition .)
+    close_parenthesise reduce using rule 40 (simple_condition -> les_condition .)
+
+
+state 85
+
+    (41) simple_condition -> grater_condition .
+
+    and_operator    reduce using rule 41 (simple_condition -> grater_condition .)
+    or_operator     reduce using rule 41 (simple_condition -> grater_condition .)
+    semicolon       reduce using rule 41 (simple_condition -> grater_condition .)
+    close_parenthesise reduce using rule 41 (simple_condition -> grater_condition .)
+
+
+state 86
+
+    (42) simple_condition -> equality_condition .
+
+    and_operator    reduce using rule 42 (simple_condition -> equality_condition .)
+    or_operator     reduce using rule 42 (simple_condition -> equality_condition .)
+    semicolon       reduce using rule 42 (simple_condition -> equality_condition .)
+    close_parenthesise reduce using rule 42 (simple_condition -> equality_condition .)
+
+
+state 87
+
+    (43) simple_condition -> not_equals_condition .
+
+    and_operator    reduce using rule 43 (simple_condition -> not_equals_condition .)
+    or_operator     reduce using rule 43 (simple_condition -> not_equals_condition .)
+    semicolon       reduce using rule 43 (simple_condition -> not_equals_condition .)
+    close_parenthesise reduce using rule 43 (simple_condition -> not_equals_condition .)
+
+
+state 88
+
+    (44) simple_condition -> condition_in_parenthesise .
+
+    and_operator    reduce using rule 44 (simple_condition -> condition_in_parenthesise .)
+    or_operator     reduce using rule 44 (simple_condition -> condition_in_parenthesise .)
+    semicolon       reduce using rule 44 (simple_condition -> condition_in_parenthesise .)
+    close_parenthesise reduce using rule 44 (simple_condition -> condition_in_parenthesise .)
+
+
+state 89
+
+    (45) complex_condition -> and_condition .
+
+    and_operator    reduce using rule 45 (complex_condition -> and_condition .)
+    or_operator     reduce using rule 45 (complex_condition -> and_condition .)
+    semicolon       reduce using rule 45 (complex_condition -> and_condition .)
+    close_parenthesise reduce using rule 45 (complex_condition -> and_condition .)
+
+
+state 90
+
+    (46) complex_condition -> or_condition .
+
+    and_operator    reduce using rule 46 (complex_condition -> or_condition .)
+    or_operator     reduce using rule 46 (complex_condition -> or_condition .)
+    semicolon       reduce using rule 46 (complex_condition -> or_condition .)
+    close_parenthesise reduce using rule 46 (complex_condition -> or_condition .)
+
+
+state 91
+
+    (50) les_condition -> expression . less_operator expression
+    (51) grater_condition -> expression . greater_operator expression
+    (52) equality_condition -> expression . equality_operator expression
+    (53) not_equals_condition -> expression . not_equals_operator expression
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    less_operator   shift and go to state 118
+    greater_operator shift and go to state 119
+    equality_operator shift and go to state 120
+    not_equals_operator shift and go to state 121
+    add_operator    shift and go to state 109
+    sub_operator    shift and go to state 110
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
+
+
+state 92
+
+    (49) condition_in_parenthesise -> open_parenthesise . condition close_parenthesise
+    (83) int_expression_in_parenthesise -> open_parenthesise . int_expression close_parenthesise
+    (38) condition -> . simple_condition
+    (39) condition -> . complex_condition
+    (72) int_expression -> . simple_int_value
+    (73) int_expression -> . function_call_value
+    (74) int_expression -> . array_cell
+    (75) int_expression -> . int_expression_in_parenthesise
+    (76) int_expression -> . var_name
+    (77) int_expression -> . add_expression
+    (78) int_expression -> . sub_expression
+    (79) int_expression -> . mul_expression
+    (80) int_expression -> . dev_expression
+    (81) int_expression -> . dev_rest_expression
+    (40) simple_condition -> . les_condition
+    (41) simple_condition -> . grater_condition
+    (42) simple_condition -> . equality_condition
+    (43) simple_condition -> . not_equals_condition
+    (44) simple_condition -> . condition_in_parenthesise
+    (45) complex_condition -> . and_condition
+    (46) complex_condition -> . or_condition
+    (65) simple_int_value -> . int_32_value
+    (66) simple_int_value -> . char_value
+    (71) function_call_value -> . function_call
+    (63) array_cell -> . array_name open_brackets value close_brackets
+    (83) int_expression_in_parenthesise -> . open_parenthesise int_expression close_parenthesise
+    (89) var_name -> . name
+    (84) add_expression -> . expression add_operator expression
+    (85) sub_expression -> . expression sub_operator expression
+    (86) mul_expression -> . expression asterisk expression
+    (87) dev_expression -> . expression dev_operator expression
+    (88) dev_rest_expression -> . expression dev_rest_operator expression
+    (50) les_condition -> . expression less_operator expression
+    (51) grater_condition -> . expression greater_operator expression
+    (52) equality_condition -> . expression equality_operator expression
+    (53) not_equals_condition -> . expression not_equals_operator expression
+    (49) condition_in_parenthesise -> . open_parenthesise condition close_parenthesise
+    (48) and_condition -> . condition and_operator simple_condition
+    (47) or_condition -> . condition or_operator simple_condition
+    (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
+    (90) array_name -> . name
+    (82) expression -> . int_expression
+    (93) function_name -> . name
+
+    int_32_value    shift and go to state 70
+    char_value      shift and go to state 71
+    open_parenthesise shift and go to state 122
+    name            shift and go to state 74
+
+    condition                      shift and go to state 123
+    int_expression                 shift and go to state 108
+    simple_condition               shift and go to state 82
+    complex_condition              shift and go to state 83
+    simple_int_value               shift and go to state 60
+    function_call_value            shift and go to state 61
+    array_cell                     shift and go to state 62
+    int_expression_in_parenthesise shift and go to state 63
+    var_name                       shift and go to state 64
+    add_expression                 shift and go to state 65
+    sub_expression                 shift and go to state 66
+    mul_expression                 shift and go to state 67
+    dev_expression                 shift and go to state 68
+    dev_rest_expression            shift and go to state 69
+    les_condition                  shift and go to state 84
+    grater_condition               shift and go to state 85
+    equality_condition             shift and go to state 86
+    not_equals_condition           shift and go to state 87
+    condition_in_parenthesise      shift and go to state 88
+    and_condition                  shift and go to state 89
+    or_condition                   shift and go to state 90
+    function_call                  shift and go to state 72
+    array_name                     shift and go to state 36
+    expression                     shift and go to state 124
+    function_name                  shift and go to state 38
+
+state 93
+
+    (82) expression -> int_expression .
+
+    less_operator   reduce using rule 82 (expression -> int_expression .)
+    greater_operator reduce using rule 82 (expression -> int_expression .)
+    equality_operator reduce using rule 82 (expression -> int_expression .)
+    not_equals_operator reduce using rule 82 (expression -> int_expression .)
+    add_operator    reduce using rule 82 (expression -> int_expression .)
+    sub_operator    reduce using rule 82 (expression -> int_expression .)
+    asterisk        reduce using rule 82 (expression -> int_expression .)
+    dev_operator    reduce using rule 82 (expression -> int_expression .)
+    dev_rest_operator reduce using rule 82 (expression -> int_expression .)
+    semicolon       reduce using rule 82 (expression -> int_expression .)
+    close_brackets  reduce using rule 82 (expression -> int_expression .)
+    close_parenthesise reduce using rule 82 (expression -> int_expression .)
+    comma           reduce using rule 82 (expression -> int_expression .)
+    and_operator    reduce using rule 82 (expression -> int_expression .)
+    or_operator     reduce using rule 82 (expression -> int_expression .)
+
+
+state 94
 
     (54) if_statement -> if_keyword open_parenthesise . condition close_parenthesise scope else_statement
     (55) if_statement -> if_keyword open_parenthesise . condition close_parenthesise scope
@@ -1758,23 +1995,23 @@ state 82
     (90) array_name -> . name
     (93) function_name -> . name
 
-    open_parenthesise shift and go to state 105
+    open_parenthesise shift and go to state 92
     int_32_value    shift and go to state 70
     char_value      shift and go to state 71
     name            shift and go to state 74
 
-    condition                      shift and go to state 106
-    simple_condition               shift and go to state 107
-    complex_condition              shift and go to state 108
-    les_condition                  shift and go to state 109
-    grater_condition               shift and go to state 110
-    equality_condition             shift and go to state 111
-    not_equals_condition           shift and go to state 112
-    condition_in_parenthesise      shift and go to state 113
-    and_condition                  shift and go to state 114
-    or_condition                   shift and go to state 115
-    expression                     shift and go to state 116
-    int_expression                 shift and go to state 117
+    condition                      shift and go to state 125
+    simple_condition               shift and go to state 82
+    complex_condition              shift and go to state 83
+    les_condition                  shift and go to state 84
+    grater_condition               shift and go to state 85
+    equality_condition             shift and go to state 86
+    not_equals_condition           shift and go to state 87
+    condition_in_parenthesise      shift and go to state 88
+    and_condition                  shift and go to state 89
+    or_condition                   shift and go to state 90
+    expression                     shift and go to state 91
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -1789,7 +2026,7 @@ state 82
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 83
+state 95
 
     (57) while_statement -> while_keyword open_parenthesise . condition close_parenthesise scope
     (38) condition -> . simple_condition
@@ -1834,23 +2071,23 @@ state 83
     (90) array_name -> . name
     (93) function_name -> . name
 
-    open_parenthesise shift and go to state 105
+    open_parenthesise shift and go to state 92
     int_32_value    shift and go to state 70
     char_value      shift and go to state 71
     name            shift and go to state 74
 
-    condition                      shift and go to state 118
-    simple_condition               shift and go to state 107
-    complex_condition              shift and go to state 108
-    les_condition                  shift and go to state 109
-    grater_condition               shift and go to state 110
-    equality_condition             shift and go to state 111
-    not_equals_condition           shift and go to state 112
-    condition_in_parenthesise      shift and go to state 113
-    and_condition                  shift and go to state 114
-    or_condition                   shift and go to state 115
-    expression                     shift and go to state 116
-    int_expression                 shift and go to state 117
+    condition                      shift and go to state 126
+    simple_condition               shift and go to state 82
+    complex_condition              shift and go to state 83
+    les_condition                  shift and go to state 84
+    grater_condition               shift and go to state 85
+    equality_condition             shift and go to state 86
+    not_equals_condition           shift and go to state 87
+    condition_in_parenthesise      shift and go to state 88
+    and_condition                  shift and go to state 89
+    or_condition                   shift and go to state 90
+    expression                     shift and go to state 91
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -1865,35 +2102,35 @@ state 83
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 84
+state 96
 
     (100) print_value_statement -> print value .
 
     semicolon       reduce using rule 100 (print_value_statement -> print value .)
 
 
-state 85
+state 97
 
     (101) print_string_statement -> print string .
 
     semicolon       reduce using rule 101 (print_string_statement -> print string .)
 
 
-state 86
+state 98
 
     (99) print_array_statement -> print_array array_name .
 
     semicolon       reduce using rule 99 (print_array_statement -> print_array array_name .)
 
 
-state 87
+state 99
 
     (11) function_prototype -> function_prototype_start open_parenthesise function_impl_parameters close_parenthesise .
 
     open_curly_brackets reduce using rule 11 (function_prototype -> function_prototype_start open_parenthesise function_impl_parameters close_parenthesise .)
 
 
-state 88
+state 100
 
     (9) function_impl_parameters -> function_impl_parameters comma . data_type new_function_parameter_name
     (58) data_type -> . int_32_keyword
@@ -1902,9 +2139,9 @@ state 88
     int_32_keyword  shift and go to state 8
     char_keyword    shift and go to state 9
 
-    data_type                      shift and go to state 119
+    data_type                      shift and go to state 127
 
-state 89
+state 101
 
     (8) function_impl_parameters -> data_type new_function_parameter_name .
 
@@ -1912,7 +2149,7 @@ state 89
     comma           reduce using rule 8 (function_impl_parameters -> data_type new_function_parameter_name .)
 
 
-state 90
+state 102
 
     (91) new_function_parameter_name -> name .
 
@@ -1920,7 +2157,7 @@ state 90
     comma           reduce using rule 91 (new_function_parameter_name -> name .)
 
 
-state 91
+state 103
 
     (61) def_var -> data_type new_var_name equals_operator . value
     (70) value -> . int_value
@@ -1956,7 +2193,7 @@ state 91
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    value                          shift and go to state 120
+    value                          shift and go to state 128
     int_value                      shift and go to state 79
     int_expression                 shift and go to state 80
     simple_int_value               shift and go to state 60
@@ -1974,7 +2211,7 @@ state 91
     expression                     shift and go to state 75
     function_name                  shift and go to state 38
 
-state 92
+state 104
 
     (62) def_array -> data_type new_var_name open_brackets . simple_int_value close_brackets
     (65) simple_int_value -> . int_32_value
@@ -1983,16 +2220,16 @@ state 92
     int_32_value    shift and go to state 70
     char_value      shift and go to state 71
 
-    simple_int_value               shift and go to state 121
+    simple_int_value               shift and go to state 129
 
-state 93
+state 105
 
     (64) int_assignment -> dest_var equals_operator value .
 
     semicolon       reduce using rule 64 (int_assignment -> dest_var equals_operator value .)
 
 
-state 94
+state 106
 
     (95) read_line_statement -> read_line array_name comma . simple_int_value
     (65) simple_int_value -> . int_32_value
@@ -2001,21 +2238,21 @@ state 94
     int_32_value    shift and go to state 70
     char_value      shift and go to state 71
 
-    simple_int_value               shift and go to state 122
+    simple_int_value               shift and go to state 130
 
-state 95
+state 107
 
     (63) array_cell -> array_name open_brackets value . close_brackets
 
-    close_brackets  shift and go to state 123
+    close_brackets  shift and go to state 131
 
 
-state 96
+state 108
 
     (83) int_expression_in_parenthesise -> open_parenthesise int_expression . close_parenthesise
     (82) expression -> int_expression .
 
-    close_parenthesise shift and go to state 124
+    close_parenthesise shift and go to state 132
     add_operator    reduce using rule 82 (expression -> int_expression .)
     sub_operator    reduce using rule 82 (expression -> int_expression .)
     asterisk        reduce using rule 82 (expression -> int_expression .)
@@ -2027,7 +2264,7 @@ state 96
     not_equals_operator reduce using rule 82 (expression -> int_expression .)
 
 
-state 97
+state 109
 
     (84) add_expression -> expression add_operator . expression
     (82) expression -> . int_expression
@@ -2061,8 +2298,8 @@ state 97
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 125
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 133
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -2077,7 +2314,7 @@ state 97
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 98
+state 110
 
     (85) sub_expression -> expression sub_operator . expression
     (82) expression -> . int_expression
@@ -2111,8 +2348,8 @@ state 98
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 126
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 134
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -2127,7 +2364,7 @@ state 98
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 99
+state 111
 
     (86) mul_expression -> expression asterisk . expression
     (82) expression -> . int_expression
@@ -2161,8 +2398,8 @@ state 99
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 127
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 135
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -2177,7 +2414,7 @@ state 99
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 100
+state 112
 
     (87) dev_expression -> expression dev_operator . expression
     (82) expression -> . int_expression
@@ -2211,8 +2448,8 @@ state 100
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 128
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 136
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -2227,7 +2464,7 @@ state 100
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 101
+state 113
 
     (88) dev_rest_expression -> expression dev_rest_operator . expression
     (82) expression -> . int_expression
@@ -2261,8 +2498,8 @@ state 101
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 129
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 137
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -2277,16 +2514,16 @@ state 101
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 102
+state 114
 
     (15) function_call -> function_name open_parenthesise function_call_parameters . close_parenthesise
     (14) function_call_parameters -> function_call_parameters . comma value
 
-    close_parenthesise shift and go to state 130
-    comma           shift and go to state 131
+    close_parenthesise shift and go to state 138
+    comma           shift and go to state 139
 
 
-state 103
+state 115
 
     (13) function_call_parameters -> value .
 
@@ -2294,724 +2531,7 @@ state 103
     comma           reduce using rule 13 (function_call_parameters -> value .)
 
 
-state 104
-
-    (4) assert_statement -> assert value comma . value
-    (70) value -> . int_value
-    (67) int_value -> . int_expression
-    (72) int_expression -> . simple_int_value
-    (73) int_expression -> . function_call_value
-    (74) int_expression -> . array_cell
-    (75) int_expression -> . int_expression_in_parenthesise
-    (76) int_expression -> . var_name
-    (77) int_expression -> . add_expression
-    (78) int_expression -> . sub_expression
-    (79) int_expression -> . mul_expression
-    (80) int_expression -> . dev_expression
-    (81) int_expression -> . dev_rest_expression
-    (65) simple_int_value -> . int_32_value
-    (66) simple_int_value -> . char_value
-    (71) function_call_value -> . function_call
-    (63) array_cell -> . array_name open_brackets value close_brackets
-    (83) int_expression_in_parenthesise -> . open_parenthesise int_expression close_parenthesise
-    (89) var_name -> . name
-    (84) add_expression -> . expression add_operator expression
-    (85) sub_expression -> . expression sub_operator expression
-    (86) mul_expression -> . expression asterisk expression
-    (87) dev_expression -> . expression dev_operator expression
-    (88) dev_rest_expression -> . expression dev_rest_operator expression
-    (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
-    (90) array_name -> . name
-    (82) expression -> . int_expression
-    (93) function_name -> . name
-
-    int_32_value    shift and go to state 70
-    char_value      shift and go to state 71
-    open_parenthesise shift and go to state 73
-    name            shift and go to state 74
-
-    value                          shift and go to state 132
-    int_value                      shift and go to state 79
-    int_expression                 shift and go to state 80
-    simple_int_value               shift and go to state 60
-    function_call_value            shift and go to state 61
-    array_cell                     shift and go to state 62
-    int_expression_in_parenthesise shift and go to state 63
-    var_name                       shift and go to state 64
-    add_expression                 shift and go to state 65
-    sub_expression                 shift and go to state 66
-    mul_expression                 shift and go to state 67
-    dev_expression                 shift and go to state 68
-    dev_rest_expression            shift and go to state 69
-    function_call                  shift and go to state 72
-    array_name                     shift and go to state 36
-    expression                     shift and go to state 75
-    function_name                  shift and go to state 38
-
-state 105
-
-    (49) condition_in_parenthesise -> open_parenthesise . condition close_parenthesise
-    (83) int_expression_in_parenthesise -> open_parenthesise . int_expression close_parenthesise
-    (38) condition -> . simple_condition
-    (39) condition -> . complex_condition
-    (72) int_expression -> . simple_int_value
-    (73) int_expression -> . function_call_value
-    (74) int_expression -> . array_cell
-    (75) int_expression -> . int_expression_in_parenthesise
-    (76) int_expression -> . var_name
-    (77) int_expression -> . add_expression
-    (78) int_expression -> . sub_expression
-    (79) int_expression -> . mul_expression
-    (80) int_expression -> . dev_expression
-    (81) int_expression -> . dev_rest_expression
-    (40) simple_condition -> . les_condition
-    (41) simple_condition -> . grater_condition
-    (42) simple_condition -> . equality_condition
-    (43) simple_condition -> . not_equals_condition
-    (44) simple_condition -> . condition_in_parenthesise
-    (45) complex_condition -> . and_condition
-    (46) complex_condition -> . or_condition
-    (65) simple_int_value -> . int_32_value
-    (66) simple_int_value -> . char_value
-    (71) function_call_value -> . function_call
-    (63) array_cell -> . array_name open_brackets value close_brackets
-    (83) int_expression_in_parenthesise -> . open_parenthesise int_expression close_parenthesise
-    (89) var_name -> . name
-    (84) add_expression -> . expression add_operator expression
-    (85) sub_expression -> . expression sub_operator expression
-    (86) mul_expression -> . expression asterisk expression
-    (87) dev_expression -> . expression dev_operator expression
-    (88) dev_rest_expression -> . expression dev_rest_operator expression
-    (50) les_condition -> . expression less_operator expression
-    (51) grater_condition -> . expression greater_operator expression
-    (52) equality_condition -> . expression equality_operator expression
-    (53) not_equals_condition -> . expression not_equals_operator expression
-    (49) condition_in_parenthesise -> . open_parenthesise condition close_parenthesise
-    (48) and_condition -> . condition and_operator simple_condition
-    (47) or_condition -> . condition or_operator simple_condition
-    (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
-    (90) array_name -> . name
-    (82) expression -> . int_expression
-    (93) function_name -> . name
-
-    int_32_value    shift and go to state 70
-    char_value      shift and go to state 71
-    open_parenthesise shift and go to state 133
-    name            shift and go to state 74
-
-    condition                      shift and go to state 134
-    int_expression                 shift and go to state 96
-    simple_condition               shift and go to state 107
-    complex_condition              shift and go to state 108
-    simple_int_value               shift and go to state 60
-    function_call_value            shift and go to state 61
-    array_cell                     shift and go to state 62
-    int_expression_in_parenthesise shift and go to state 63
-    var_name                       shift and go to state 64
-    add_expression                 shift and go to state 65
-    sub_expression                 shift and go to state 66
-    mul_expression                 shift and go to state 67
-    dev_expression                 shift and go to state 68
-    dev_rest_expression            shift and go to state 69
-    les_condition                  shift and go to state 109
-    grater_condition               shift and go to state 110
-    equality_condition             shift and go to state 111
-    not_equals_condition           shift and go to state 112
-    condition_in_parenthesise      shift and go to state 113
-    and_condition                  shift and go to state 114
-    or_condition                   shift and go to state 115
-    function_call                  shift and go to state 72
-    array_name                     shift and go to state 36
-    expression                     shift and go to state 135
-    function_name                  shift and go to state 38
-
-state 106
-
-    (54) if_statement -> if_keyword open_parenthesise condition . close_parenthesise scope else_statement
-    (55) if_statement -> if_keyword open_parenthesise condition . close_parenthesise scope
-    (48) and_condition -> condition . and_operator simple_condition
-    (47) or_condition -> condition . or_operator simple_condition
-
-    close_parenthesise shift and go to state 136
-    and_operator    shift and go to state 137
-    or_operator     shift and go to state 138
-
-
-state 107
-
-    (38) condition -> simple_condition .
-
-    close_parenthesise reduce using rule 38 (condition -> simple_condition .)
-    and_operator    reduce using rule 38 (condition -> simple_condition .)
-    or_operator     reduce using rule 38 (condition -> simple_condition .)
-
-
-state 108
-
-    (39) condition -> complex_condition .
-
-    close_parenthesise reduce using rule 39 (condition -> complex_condition .)
-    and_operator    reduce using rule 39 (condition -> complex_condition .)
-    or_operator     reduce using rule 39 (condition -> complex_condition .)
-
-
-state 109
-
-    (40) simple_condition -> les_condition .
-
-    close_parenthesise reduce using rule 40 (simple_condition -> les_condition .)
-    and_operator    reduce using rule 40 (simple_condition -> les_condition .)
-    or_operator     reduce using rule 40 (simple_condition -> les_condition .)
-
-
-state 110
-
-    (41) simple_condition -> grater_condition .
-
-    close_parenthesise reduce using rule 41 (simple_condition -> grater_condition .)
-    and_operator    reduce using rule 41 (simple_condition -> grater_condition .)
-    or_operator     reduce using rule 41 (simple_condition -> grater_condition .)
-
-
-state 111
-
-    (42) simple_condition -> equality_condition .
-
-    close_parenthesise reduce using rule 42 (simple_condition -> equality_condition .)
-    and_operator    reduce using rule 42 (simple_condition -> equality_condition .)
-    or_operator     reduce using rule 42 (simple_condition -> equality_condition .)
-
-
-state 112
-
-    (43) simple_condition -> not_equals_condition .
-
-    close_parenthesise reduce using rule 43 (simple_condition -> not_equals_condition .)
-    and_operator    reduce using rule 43 (simple_condition -> not_equals_condition .)
-    or_operator     reduce using rule 43 (simple_condition -> not_equals_condition .)
-
-
-state 113
-
-    (44) simple_condition -> condition_in_parenthesise .
-
-    close_parenthesise reduce using rule 44 (simple_condition -> condition_in_parenthesise .)
-    and_operator    reduce using rule 44 (simple_condition -> condition_in_parenthesise .)
-    or_operator     reduce using rule 44 (simple_condition -> condition_in_parenthesise .)
-
-
-state 114
-
-    (45) complex_condition -> and_condition .
-
-    close_parenthesise reduce using rule 45 (complex_condition -> and_condition .)
-    and_operator    reduce using rule 45 (complex_condition -> and_condition .)
-    or_operator     reduce using rule 45 (complex_condition -> and_condition .)
-
-
-state 115
-
-    (46) complex_condition -> or_condition .
-
-    close_parenthesise reduce using rule 46 (complex_condition -> or_condition .)
-    and_operator    reduce using rule 46 (complex_condition -> or_condition .)
-    or_operator     reduce using rule 46 (complex_condition -> or_condition .)
-
-
 state 116
-
-    (50) les_condition -> expression . less_operator expression
-    (51) grater_condition -> expression . greater_operator expression
-    (52) equality_condition -> expression . equality_operator expression
-    (53) not_equals_condition -> expression . not_equals_operator expression
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    less_operator   shift and go to state 139
-    greater_operator shift and go to state 140
-    equality_operator shift and go to state 141
-    not_equals_operator shift and go to state 142
-    add_operator    shift and go to state 97
-    sub_operator    shift and go to state 98
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
-
-
-state 117
-
-    (82) expression -> int_expression .
-
-    less_operator   reduce using rule 82 (expression -> int_expression .)
-    greater_operator reduce using rule 82 (expression -> int_expression .)
-    equality_operator reduce using rule 82 (expression -> int_expression .)
-    not_equals_operator reduce using rule 82 (expression -> int_expression .)
-    add_operator    reduce using rule 82 (expression -> int_expression .)
-    sub_operator    reduce using rule 82 (expression -> int_expression .)
-    asterisk        reduce using rule 82 (expression -> int_expression .)
-    dev_operator    reduce using rule 82 (expression -> int_expression .)
-    dev_rest_operator reduce using rule 82 (expression -> int_expression .)
-    semicolon       reduce using rule 82 (expression -> int_expression .)
-    comma           reduce using rule 82 (expression -> int_expression .)
-    close_brackets  reduce using rule 82 (expression -> int_expression .)
-    close_parenthesise reduce using rule 82 (expression -> int_expression .)
-    and_operator    reduce using rule 82 (expression -> int_expression .)
-    or_operator     reduce using rule 82 (expression -> int_expression .)
-
-
-state 118
-
-    (57) while_statement -> while_keyword open_parenthesise condition . close_parenthesise scope
-    (48) and_condition -> condition . and_operator simple_condition
-    (47) or_condition -> condition . or_operator simple_condition
-
-    close_parenthesise shift and go to state 143
-    and_operator    shift and go to state 137
-    or_operator     shift and go to state 138
-
-
-state 119
-
-    (9) function_impl_parameters -> function_impl_parameters comma data_type . new_function_parameter_name
-    (91) new_function_parameter_name -> . name
-
-    name            shift and go to state 90
-
-    new_function_parameter_name    shift and go to state 144
-
-state 120
-
-    (61) def_var -> data_type new_var_name equals_operator value .
-
-    semicolon       reduce using rule 61 (def_var -> data_type new_var_name equals_operator value .)
-
-
-state 121
-
-    (62) def_array -> data_type new_var_name open_brackets simple_int_value . close_brackets
-
-    close_brackets  shift and go to state 145
-
-
-state 122
-
-    (95) read_line_statement -> read_line array_name comma simple_int_value .
-
-    semicolon       reduce using rule 95 (read_line_statement -> read_line array_name comma simple_int_value .)
-
-
-state 123
-
-    (63) array_cell -> array_name open_brackets value close_brackets .
-
-    equals_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    semicolon       reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    add_operator    reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    sub_operator    reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    asterisk        reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    dev_operator    reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    dev_rest_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    comma           reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    close_brackets  reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    close_parenthesise reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    less_operator   reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    greater_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    equality_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    not_equals_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    and_operator    reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-    or_operator     reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
-
-
-state 124
-
-    (83) int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .
-
-    semicolon       reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    add_operator    reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    sub_operator    reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    asterisk        reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    dev_operator    reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    dev_rest_operator reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    comma           reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    close_brackets  reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    close_parenthesise reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    less_operator   reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    greater_operator reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    equality_operator reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    not_equals_operator reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    and_operator    reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-    or_operator     reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
-
-
-state 125
-
-    (84) add_expression -> expression add_operator expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    semicolon       reduce using rule 84 (add_expression -> expression add_operator expression .)
-    add_operator    reduce using rule 84 (add_expression -> expression add_operator expression .)
-    sub_operator    reduce using rule 84 (add_expression -> expression add_operator expression .)
-    comma           reduce using rule 84 (add_expression -> expression add_operator expression .)
-    close_brackets  reduce using rule 84 (add_expression -> expression add_operator expression .)
-    close_parenthesise reduce using rule 84 (add_expression -> expression add_operator expression .)
-    less_operator   reduce using rule 84 (add_expression -> expression add_operator expression .)
-    greater_operator reduce using rule 84 (add_expression -> expression add_operator expression .)
-    equality_operator reduce using rule 84 (add_expression -> expression add_operator expression .)
-    not_equals_operator reduce using rule 84 (add_expression -> expression add_operator expression .)
-    and_operator    reduce using rule 84 (add_expression -> expression add_operator expression .)
-    or_operator     reduce using rule 84 (add_expression -> expression add_operator expression .)
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
-
-  ! asterisk        [ reduce using rule 84 (add_expression -> expression add_operator expression .) ]
-  ! dev_operator    [ reduce using rule 84 (add_expression -> expression add_operator expression .) ]
-  ! dev_rest_operator [ reduce using rule 84 (add_expression -> expression add_operator expression .) ]
-  ! add_operator    [ shift and go to state 97 ]
-  ! sub_operator    [ shift and go to state 98 ]
-
-
-state 126
-
-    (85) sub_expression -> expression sub_operator expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    semicolon       reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    add_operator    reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    sub_operator    reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    comma           reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    close_brackets  reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    close_parenthesise reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    less_operator   reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    greater_operator reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    equality_operator reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    not_equals_operator reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    and_operator    reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    or_operator     reduce using rule 85 (sub_expression -> expression sub_operator expression .)
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
-
-  ! asterisk        [ reduce using rule 85 (sub_expression -> expression sub_operator expression .) ]
-  ! dev_operator    [ reduce using rule 85 (sub_expression -> expression sub_operator expression .) ]
-  ! dev_rest_operator [ reduce using rule 85 (sub_expression -> expression sub_operator expression .) ]
-  ! add_operator    [ shift and go to state 97 ]
-  ! sub_operator    [ shift and go to state 98 ]
-
-
-state 127
-
-    (86) mul_expression -> expression asterisk expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    semicolon       reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    add_operator    reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    sub_operator    reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    asterisk        reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    dev_operator    reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    dev_rest_operator reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    comma           reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    close_brackets  reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    close_parenthesise reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    less_operator   reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    greater_operator reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    equality_operator reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    not_equals_operator reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    and_operator    reduce using rule 86 (mul_expression -> expression asterisk expression .)
-    or_operator     reduce using rule 86 (mul_expression -> expression asterisk expression .)
-
-  ! add_operator    [ shift and go to state 97 ]
-  ! sub_operator    [ shift and go to state 98 ]
-  ! asterisk        [ shift and go to state 99 ]
-  ! dev_operator    [ shift and go to state 100 ]
-  ! dev_rest_operator [ shift and go to state 101 ]
-
-
-state 128
-
-    (87) dev_expression -> expression dev_operator expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    semicolon       reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    add_operator    reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    sub_operator    reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    asterisk        reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    dev_operator    reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    dev_rest_operator reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    comma           reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    close_brackets  reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    close_parenthesise reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    less_operator   reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    greater_operator reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    equality_operator reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    not_equals_operator reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    and_operator    reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-    or_operator     reduce using rule 87 (dev_expression -> expression dev_operator expression .)
-
-  ! add_operator    [ shift and go to state 97 ]
-  ! sub_operator    [ shift and go to state 98 ]
-  ! asterisk        [ shift and go to state 99 ]
-  ! dev_operator    [ shift and go to state 100 ]
-  ! dev_rest_operator [ shift and go to state 101 ]
-
-
-state 129
-
-    (88) dev_rest_expression -> expression dev_rest_operator expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    semicolon       reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    add_operator    reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    sub_operator    reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    asterisk        reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    dev_operator    reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    dev_rest_operator reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    comma           reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    close_brackets  reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    close_parenthesise reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    less_operator   reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    greater_operator reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    equality_operator reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    not_equals_operator reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    and_operator    reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-    or_operator     reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
-
-  ! add_operator    [ shift and go to state 97 ]
-  ! sub_operator    [ shift and go to state 98 ]
-  ! asterisk        [ shift and go to state 99 ]
-  ! dev_operator    [ shift and go to state 100 ]
-  ! dev_rest_operator [ shift and go to state 101 ]
-
-
-state 130
-
-    (15) function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .
-
-    semicolon       reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    add_operator    reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    sub_operator    reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    asterisk        reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    dev_operator    reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    dev_rest_operator reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    comma           reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    close_brackets  reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    close_parenthesise reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    less_operator   reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    greater_operator reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    equality_operator reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    not_equals_operator reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    and_operator    reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-    or_operator     reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
-
-
-state 131
-
-    (14) function_call_parameters -> function_call_parameters comma . value
-    (70) value -> . int_value
-    (67) int_value -> . int_expression
-    (72) int_expression -> . simple_int_value
-    (73) int_expression -> . function_call_value
-    (74) int_expression -> . array_cell
-    (75) int_expression -> . int_expression_in_parenthesise
-    (76) int_expression -> . var_name
-    (77) int_expression -> . add_expression
-    (78) int_expression -> . sub_expression
-    (79) int_expression -> . mul_expression
-    (80) int_expression -> . dev_expression
-    (81) int_expression -> . dev_rest_expression
-    (65) simple_int_value -> . int_32_value
-    (66) simple_int_value -> . char_value
-    (71) function_call_value -> . function_call
-    (63) array_cell -> . array_name open_brackets value close_brackets
-    (83) int_expression_in_parenthesise -> . open_parenthesise int_expression close_parenthesise
-    (89) var_name -> . name
-    (84) add_expression -> . expression add_operator expression
-    (85) sub_expression -> . expression sub_operator expression
-    (86) mul_expression -> . expression asterisk expression
-    (87) dev_expression -> . expression dev_operator expression
-    (88) dev_rest_expression -> . expression dev_rest_operator expression
-    (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
-    (90) array_name -> . name
-    (82) expression -> . int_expression
-    (93) function_name -> . name
-
-    int_32_value    shift and go to state 70
-    char_value      shift and go to state 71
-    open_parenthesise shift and go to state 73
-    name            shift and go to state 74
-
-    value                          shift and go to state 146
-    int_value                      shift and go to state 79
-    int_expression                 shift and go to state 80
-    simple_int_value               shift and go to state 60
-    function_call_value            shift and go to state 61
-    array_cell                     shift and go to state 62
-    int_expression_in_parenthesise shift and go to state 63
-    var_name                       shift and go to state 64
-    add_expression                 shift and go to state 65
-    sub_expression                 shift and go to state 66
-    mul_expression                 shift and go to state 67
-    dev_expression                 shift and go to state 68
-    dev_rest_expression            shift and go to state 69
-    function_call                  shift and go to state 72
-    array_name                     shift and go to state 36
-    expression                     shift and go to state 75
-    function_name                  shift and go to state 38
-
-state 132
-
-    (4) assert_statement -> assert value comma value .
-
-    semicolon       reduce using rule 4 (assert_statement -> assert value comma value .)
-
-
-state 133
-
-    (83) int_expression_in_parenthesise -> open_parenthesise . int_expression close_parenthesise
-    (49) condition_in_parenthesise -> open_parenthesise . condition close_parenthesise
-    (72) int_expression -> . simple_int_value
-    (73) int_expression -> . function_call_value
-    (74) int_expression -> . array_cell
-    (75) int_expression -> . int_expression_in_parenthesise
-    (76) int_expression -> . var_name
-    (77) int_expression -> . add_expression
-    (78) int_expression -> . sub_expression
-    (79) int_expression -> . mul_expression
-    (80) int_expression -> . dev_expression
-    (81) int_expression -> . dev_rest_expression
-    (38) condition -> . simple_condition
-    (39) condition -> . complex_condition
-    (65) simple_int_value -> . int_32_value
-    (66) simple_int_value -> . char_value
-    (71) function_call_value -> . function_call
-    (63) array_cell -> . array_name open_brackets value close_brackets
-    (83) int_expression_in_parenthesise -> . open_parenthesise int_expression close_parenthesise
-    (89) var_name -> . name
-    (84) add_expression -> . expression add_operator expression
-    (85) sub_expression -> . expression sub_operator expression
-    (86) mul_expression -> . expression asterisk expression
-    (87) dev_expression -> . expression dev_operator expression
-    (88) dev_rest_expression -> . expression dev_rest_operator expression
-    (40) simple_condition -> . les_condition
-    (41) simple_condition -> . grater_condition
-    (42) simple_condition -> . equality_condition
-    (43) simple_condition -> . not_equals_condition
-    (44) simple_condition -> . condition_in_parenthesise
-    (45) complex_condition -> . and_condition
-    (46) complex_condition -> . or_condition
-    (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
-    (90) array_name -> . name
-    (82) expression -> . int_expression
-    (50) les_condition -> . expression less_operator expression
-    (51) grater_condition -> . expression greater_operator expression
-    (52) equality_condition -> . expression equality_operator expression
-    (53) not_equals_condition -> . expression not_equals_operator expression
-    (49) condition_in_parenthesise -> . open_parenthesise condition close_parenthesise
-    (48) and_condition -> . condition and_operator simple_condition
-    (47) or_condition -> . condition or_operator simple_condition
-    (93) function_name -> . name
-
-    int_32_value    shift and go to state 70
-    char_value      shift and go to state 71
-    open_parenthesise shift and go to state 133
-    name            shift and go to state 74
-
-    int_expression                 shift and go to state 96
-    condition                      shift and go to state 134
-    simple_int_value               shift and go to state 60
-    function_call_value            shift and go to state 61
-    array_cell                     shift and go to state 62
-    int_expression_in_parenthesise shift and go to state 63
-    var_name                       shift and go to state 64
-    add_expression                 shift and go to state 65
-    sub_expression                 shift and go to state 66
-    mul_expression                 shift and go to state 67
-    dev_expression                 shift and go to state 68
-    dev_rest_expression            shift and go to state 69
-    simple_condition               shift and go to state 107
-    complex_condition              shift and go to state 108
-    function_call                  shift and go to state 72
-    array_name                     shift and go to state 36
-    expression                     shift and go to state 135
-    les_condition                  shift and go to state 109
-    grater_condition               shift and go to state 110
-    equality_condition             shift and go to state 111
-    not_equals_condition           shift and go to state 112
-    condition_in_parenthesise      shift and go to state 113
-    and_condition                  shift and go to state 114
-    or_condition                   shift and go to state 115
-    function_name                  shift and go to state 38
-
-state 134
-
-    (49) condition_in_parenthesise -> open_parenthesise condition . close_parenthesise
-    (48) and_condition -> condition . and_operator simple_condition
-    (47) or_condition -> condition . or_operator simple_condition
-
-    close_parenthesise shift and go to state 147
-    and_operator    shift and go to state 137
-    or_operator     shift and go to state 138
-
-
-state 135
-
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-    (50) les_condition -> expression . less_operator expression
-    (51) grater_condition -> expression . greater_operator expression
-    (52) equality_condition -> expression . equality_operator expression
-    (53) not_equals_condition -> expression . not_equals_operator expression
-
-    add_operator    shift and go to state 97
-    sub_operator    shift and go to state 98
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
-    less_operator   shift and go to state 139
-    greater_operator shift and go to state 140
-    equality_operator shift and go to state 141
-    not_equals_operator shift and go to state 142
-
-
-state 136
-
-    (54) if_statement -> if_keyword open_parenthesise condition close_parenthesise . scope else_statement
-    (55) if_statement -> if_keyword open_parenthesise condition close_parenthesise . scope
-    (37) scope -> . scope_start code_block scope_end
-    (35) scope_start -> . open_curly_brackets
-
-    open_curly_brackets shift and go to state 150
-
-    scope                          shift and go to state 148
-    scope_start                    shift and go to state 149
-
-state 137
 
     (48) and_condition -> condition and_operator . simple_condition
     (40) simple_condition -> . les_condition
@@ -3050,19 +2570,19 @@ state 137
     (90) array_name -> . name
     (93) function_name -> . name
 
-    open_parenthesise shift and go to state 105
+    open_parenthesise shift and go to state 92
     int_32_value    shift and go to state 70
     char_value      shift and go to state 71
     name            shift and go to state 74
 
-    simple_condition               shift and go to state 151
-    les_condition                  shift and go to state 109
-    grater_condition               shift and go to state 110
-    equality_condition             shift and go to state 111
-    not_equals_condition           shift and go to state 112
-    condition_in_parenthesise      shift and go to state 113
-    expression                     shift and go to state 116
-    int_expression                 shift and go to state 117
+    simple_condition               shift and go to state 140
+    les_condition                  shift and go to state 84
+    grater_condition               shift and go to state 85
+    equality_condition             shift and go to state 86
+    not_equals_condition           shift and go to state 87
+    condition_in_parenthesise      shift and go to state 88
+    expression                     shift and go to state 91
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -3077,7 +2597,7 @@ state 137
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 138
+state 117
 
     (47) or_condition -> condition or_operator . simple_condition
     (40) simple_condition -> . les_condition
@@ -3116,19 +2636,19 @@ state 138
     (90) array_name -> . name
     (93) function_name -> . name
 
-    open_parenthesise shift and go to state 105
+    open_parenthesise shift and go to state 92
     int_32_value    shift and go to state 70
     char_value      shift and go to state 71
     name            shift and go to state 74
 
-    simple_condition               shift and go to state 152
-    les_condition                  shift and go to state 109
-    grater_condition               shift and go to state 110
-    equality_condition             shift and go to state 111
-    not_equals_condition           shift and go to state 112
-    condition_in_parenthesise      shift and go to state 113
-    expression                     shift and go to state 116
-    int_expression                 shift and go to state 117
+    simple_condition               shift and go to state 141
+    les_condition                  shift and go to state 84
+    grater_condition               shift and go to state 85
+    equality_condition             shift and go to state 86
+    not_equals_condition           shift and go to state 87
+    condition_in_parenthesise      shift and go to state 88
+    expression                     shift and go to state 91
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -3143,7 +2663,7 @@ state 138
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 139
+state 118
 
     (50) les_condition -> expression less_operator . expression
     (82) expression -> . int_expression
@@ -3177,8 +2697,8 @@ state 139
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 153
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 142
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -3193,7 +2713,7 @@ state 139
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 140
+state 119
 
     (51) grater_condition -> expression greater_operator . expression
     (82) expression -> . int_expression
@@ -3227,8 +2747,8 @@ state 140
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 154
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 143
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -3243,7 +2763,7 @@ state 140
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 141
+state 120
 
     (52) equality_condition -> expression equality_operator . expression
     (82) expression -> . int_expression
@@ -3277,8 +2797,8 @@ state 141
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 155
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 144
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -3293,7 +2813,7 @@ state 141
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
-state 142
+state 121
 
     (53) not_equals_condition -> expression not_equals_operator . expression
     (82) expression -> . int_expression
@@ -3327,8 +2847,8 @@ state 142
     open_parenthesise shift and go to state 73
     name            shift and go to state 74
 
-    expression                     shift and go to state 156
-    int_expression                 shift and go to state 117
+    expression                     shift and go to state 145
+    int_expression                 shift and go to state 93
     simple_int_value               shift and go to state 60
     function_call_value            shift and go to state 61
     array_cell                     shift and go to state 62
@@ -3343,18 +2863,582 @@ state 142
     array_name                     shift and go to state 36
     function_name                  shift and go to state 38
 
+state 122
+
+    (83) int_expression_in_parenthesise -> open_parenthesise . int_expression close_parenthesise
+    (49) condition_in_parenthesise -> open_parenthesise . condition close_parenthesise
+    (72) int_expression -> . simple_int_value
+    (73) int_expression -> . function_call_value
+    (74) int_expression -> . array_cell
+    (75) int_expression -> . int_expression_in_parenthesise
+    (76) int_expression -> . var_name
+    (77) int_expression -> . add_expression
+    (78) int_expression -> . sub_expression
+    (79) int_expression -> . mul_expression
+    (80) int_expression -> . dev_expression
+    (81) int_expression -> . dev_rest_expression
+    (38) condition -> . simple_condition
+    (39) condition -> . complex_condition
+    (65) simple_int_value -> . int_32_value
+    (66) simple_int_value -> . char_value
+    (71) function_call_value -> . function_call
+    (63) array_cell -> . array_name open_brackets value close_brackets
+    (83) int_expression_in_parenthesise -> . open_parenthesise int_expression close_parenthesise
+    (89) var_name -> . name
+    (84) add_expression -> . expression add_operator expression
+    (85) sub_expression -> . expression sub_operator expression
+    (86) mul_expression -> . expression asterisk expression
+    (87) dev_expression -> . expression dev_operator expression
+    (88) dev_rest_expression -> . expression dev_rest_operator expression
+    (40) simple_condition -> . les_condition
+    (41) simple_condition -> . grater_condition
+    (42) simple_condition -> . equality_condition
+    (43) simple_condition -> . not_equals_condition
+    (44) simple_condition -> . condition_in_parenthesise
+    (45) complex_condition -> . and_condition
+    (46) complex_condition -> . or_condition
+    (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
+    (90) array_name -> . name
+    (82) expression -> . int_expression
+    (50) les_condition -> . expression less_operator expression
+    (51) grater_condition -> . expression greater_operator expression
+    (52) equality_condition -> . expression equality_operator expression
+    (53) not_equals_condition -> . expression not_equals_operator expression
+    (49) condition_in_parenthesise -> . open_parenthesise condition close_parenthesise
+    (48) and_condition -> . condition and_operator simple_condition
+    (47) or_condition -> . condition or_operator simple_condition
+    (93) function_name -> . name
+
+    int_32_value    shift and go to state 70
+    char_value      shift and go to state 71
+    open_parenthesise shift and go to state 122
+    name            shift and go to state 74
+
+    int_expression                 shift and go to state 108
+    condition                      shift and go to state 123
+    simple_int_value               shift and go to state 60
+    function_call_value            shift and go to state 61
+    array_cell                     shift and go to state 62
+    int_expression_in_parenthesise shift and go to state 63
+    var_name                       shift and go to state 64
+    add_expression                 shift and go to state 65
+    sub_expression                 shift and go to state 66
+    mul_expression                 shift and go to state 67
+    dev_expression                 shift and go to state 68
+    dev_rest_expression            shift and go to state 69
+    simple_condition               shift and go to state 82
+    complex_condition              shift and go to state 83
+    function_call                  shift and go to state 72
+    array_name                     shift and go to state 36
+    expression                     shift and go to state 124
+    les_condition                  shift and go to state 84
+    grater_condition               shift and go to state 85
+    equality_condition             shift and go to state 86
+    not_equals_condition           shift and go to state 87
+    condition_in_parenthesise      shift and go to state 88
+    and_condition                  shift and go to state 89
+    or_condition                   shift and go to state 90
+    function_name                  shift and go to state 38
+
+state 123
+
+    (49) condition_in_parenthesise -> open_parenthesise condition . close_parenthesise
+    (48) and_condition -> condition . and_operator simple_condition
+    (47) or_condition -> condition . or_operator simple_condition
+
+    close_parenthesise shift and go to state 146
+    and_operator    shift and go to state 116
+    or_operator     shift and go to state 117
+
+
+state 124
+
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+    (50) les_condition -> expression . less_operator expression
+    (51) grater_condition -> expression . greater_operator expression
+    (52) equality_condition -> expression . equality_operator expression
+    (53) not_equals_condition -> expression . not_equals_operator expression
+
+    add_operator    shift and go to state 109
+    sub_operator    shift and go to state 110
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
+    less_operator   shift and go to state 118
+    greater_operator shift and go to state 119
+    equality_operator shift and go to state 120
+    not_equals_operator shift and go to state 121
+
+
+state 125
+
+    (54) if_statement -> if_keyword open_parenthesise condition . close_parenthesise scope else_statement
+    (55) if_statement -> if_keyword open_parenthesise condition . close_parenthesise scope
+    (48) and_condition -> condition . and_operator simple_condition
+    (47) or_condition -> condition . or_operator simple_condition
+
+    close_parenthesise shift and go to state 147
+    and_operator    shift and go to state 116
+    or_operator     shift and go to state 117
+
+
+state 126
+
+    (57) while_statement -> while_keyword open_parenthesise condition . close_parenthesise scope
+    (48) and_condition -> condition . and_operator simple_condition
+    (47) or_condition -> condition . or_operator simple_condition
+
+    close_parenthesise shift and go to state 148
+    and_operator    shift and go to state 116
+    or_operator     shift and go to state 117
+
+
+state 127
+
+    (9) function_impl_parameters -> function_impl_parameters comma data_type . new_function_parameter_name
+    (91) new_function_parameter_name -> . name
+
+    name            shift and go to state 102
+
+    new_function_parameter_name    shift and go to state 149
+
+state 128
+
+    (61) def_var -> data_type new_var_name equals_operator value .
+
+    semicolon       reduce using rule 61 (def_var -> data_type new_var_name equals_operator value .)
+
+
+state 129
+
+    (62) def_array -> data_type new_var_name open_brackets simple_int_value . close_brackets
+
+    close_brackets  shift and go to state 150
+
+
+state 130
+
+    (95) read_line_statement -> read_line array_name comma simple_int_value .
+
+    semicolon       reduce using rule 95 (read_line_statement -> read_line array_name comma simple_int_value .)
+
+
+state 131
+
+    (63) array_cell -> array_name open_brackets value close_brackets .
+
+    equals_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    semicolon       reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    add_operator    reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    sub_operator    reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    asterisk        reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    dev_operator    reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    dev_rest_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    less_operator   reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    greater_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    equality_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    not_equals_operator reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    close_brackets  reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    close_parenthesise reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    comma           reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    and_operator    reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+    or_operator     reduce using rule 63 (array_cell -> array_name open_brackets value close_brackets .)
+
+
+state 132
+
+    (83) int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .
+
+    semicolon       reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    add_operator    reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    sub_operator    reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    asterisk        reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    dev_operator    reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    dev_rest_operator reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    less_operator   reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    greater_operator reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    equality_operator reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    not_equals_operator reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    close_brackets  reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    close_parenthesise reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    comma           reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    and_operator    reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+    or_operator     reduce using rule 83 (int_expression_in_parenthesise -> open_parenthesise int_expression close_parenthesise .)
+
+
+state 133
+
+    (84) add_expression -> expression add_operator expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    semicolon       reduce using rule 84 (add_expression -> expression add_operator expression .)
+    add_operator    reduce using rule 84 (add_expression -> expression add_operator expression .)
+    sub_operator    reduce using rule 84 (add_expression -> expression add_operator expression .)
+    less_operator   reduce using rule 84 (add_expression -> expression add_operator expression .)
+    greater_operator reduce using rule 84 (add_expression -> expression add_operator expression .)
+    equality_operator reduce using rule 84 (add_expression -> expression add_operator expression .)
+    not_equals_operator reduce using rule 84 (add_expression -> expression add_operator expression .)
+    close_brackets  reduce using rule 84 (add_expression -> expression add_operator expression .)
+    close_parenthesise reduce using rule 84 (add_expression -> expression add_operator expression .)
+    comma           reduce using rule 84 (add_expression -> expression add_operator expression .)
+    and_operator    reduce using rule 84 (add_expression -> expression add_operator expression .)
+    or_operator     reduce using rule 84 (add_expression -> expression add_operator expression .)
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
+
+  ! asterisk        [ reduce using rule 84 (add_expression -> expression add_operator expression .) ]
+  ! dev_operator    [ reduce using rule 84 (add_expression -> expression add_operator expression .) ]
+  ! dev_rest_operator [ reduce using rule 84 (add_expression -> expression add_operator expression .) ]
+  ! add_operator    [ shift and go to state 109 ]
+  ! sub_operator    [ shift and go to state 110 ]
+
+
+state 134
+
+    (85) sub_expression -> expression sub_operator expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    semicolon       reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    add_operator    reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    sub_operator    reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    less_operator   reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    greater_operator reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    equality_operator reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    not_equals_operator reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    close_brackets  reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    close_parenthesise reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    comma           reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    and_operator    reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    or_operator     reduce using rule 85 (sub_expression -> expression sub_operator expression .)
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
+
+  ! asterisk        [ reduce using rule 85 (sub_expression -> expression sub_operator expression .) ]
+  ! dev_operator    [ reduce using rule 85 (sub_expression -> expression sub_operator expression .) ]
+  ! dev_rest_operator [ reduce using rule 85 (sub_expression -> expression sub_operator expression .) ]
+  ! add_operator    [ shift and go to state 109 ]
+  ! sub_operator    [ shift and go to state 110 ]
+
+
+state 135
+
+    (86) mul_expression -> expression asterisk expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    semicolon       reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    add_operator    reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    sub_operator    reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    asterisk        reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    dev_operator    reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    dev_rest_operator reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    less_operator   reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    greater_operator reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    equality_operator reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    not_equals_operator reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    close_brackets  reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    close_parenthesise reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    comma           reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    and_operator    reduce using rule 86 (mul_expression -> expression asterisk expression .)
+    or_operator     reduce using rule 86 (mul_expression -> expression asterisk expression .)
+
+  ! add_operator    [ shift and go to state 109 ]
+  ! sub_operator    [ shift and go to state 110 ]
+  ! asterisk        [ shift and go to state 111 ]
+  ! dev_operator    [ shift and go to state 112 ]
+  ! dev_rest_operator [ shift and go to state 113 ]
+
+
+state 136
+
+    (87) dev_expression -> expression dev_operator expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    semicolon       reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    add_operator    reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    sub_operator    reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    asterisk        reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    dev_operator    reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    dev_rest_operator reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    less_operator   reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    greater_operator reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    equality_operator reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    not_equals_operator reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    close_brackets  reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    close_parenthesise reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    comma           reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    and_operator    reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+    or_operator     reduce using rule 87 (dev_expression -> expression dev_operator expression .)
+
+  ! add_operator    [ shift and go to state 109 ]
+  ! sub_operator    [ shift and go to state 110 ]
+  ! asterisk        [ shift and go to state 111 ]
+  ! dev_operator    [ shift and go to state 112 ]
+  ! dev_rest_operator [ shift and go to state 113 ]
+
+
+state 137
+
+    (88) dev_rest_expression -> expression dev_rest_operator expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    semicolon       reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    add_operator    reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    sub_operator    reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    asterisk        reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    dev_operator    reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    dev_rest_operator reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    less_operator   reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    greater_operator reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    equality_operator reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    not_equals_operator reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    close_brackets  reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    close_parenthesise reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    comma           reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    and_operator    reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+    or_operator     reduce using rule 88 (dev_rest_expression -> expression dev_rest_operator expression .)
+
+  ! add_operator    [ shift and go to state 109 ]
+  ! sub_operator    [ shift and go to state 110 ]
+  ! asterisk        [ shift and go to state 111 ]
+  ! dev_operator    [ shift and go to state 112 ]
+  ! dev_rest_operator [ shift and go to state 113 ]
+
+
+state 138
+
+    (15) function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .
+
+    semicolon       reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    add_operator    reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    sub_operator    reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    asterisk        reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    dev_operator    reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    dev_rest_operator reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    less_operator   reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    greater_operator reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    equality_operator reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    not_equals_operator reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    close_brackets  reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    close_parenthesise reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    comma           reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    and_operator    reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+    or_operator     reduce using rule 15 (function_call -> function_name open_parenthesise function_call_parameters close_parenthesise .)
+
+
+state 139
+
+    (14) function_call_parameters -> function_call_parameters comma . value
+    (70) value -> . int_value
+    (67) int_value -> . int_expression
+    (72) int_expression -> . simple_int_value
+    (73) int_expression -> . function_call_value
+    (74) int_expression -> . array_cell
+    (75) int_expression -> . int_expression_in_parenthesise
+    (76) int_expression -> . var_name
+    (77) int_expression -> . add_expression
+    (78) int_expression -> . sub_expression
+    (79) int_expression -> . mul_expression
+    (80) int_expression -> . dev_expression
+    (81) int_expression -> . dev_rest_expression
+    (65) simple_int_value -> . int_32_value
+    (66) simple_int_value -> . char_value
+    (71) function_call_value -> . function_call
+    (63) array_cell -> . array_name open_brackets value close_brackets
+    (83) int_expression_in_parenthesise -> . open_parenthesise int_expression close_parenthesise
+    (89) var_name -> . name
+    (84) add_expression -> . expression add_operator expression
+    (85) sub_expression -> . expression sub_operator expression
+    (86) mul_expression -> . expression asterisk expression
+    (87) dev_expression -> . expression dev_operator expression
+    (88) dev_rest_expression -> . expression dev_rest_operator expression
+    (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
+    (90) array_name -> . name
+    (82) expression -> . int_expression
+    (93) function_name -> . name
+
+    int_32_value    shift and go to state 70
+    char_value      shift and go to state 71
+    open_parenthesise shift and go to state 73
+    name            shift and go to state 74
+
+    value                          shift and go to state 151
+    int_value                      shift and go to state 79
+    int_expression                 shift and go to state 80
+    simple_int_value               shift and go to state 60
+    function_call_value            shift and go to state 61
+    array_cell                     shift and go to state 62
+    int_expression_in_parenthesise shift and go to state 63
+    var_name                       shift and go to state 64
+    add_expression                 shift and go to state 65
+    sub_expression                 shift and go to state 66
+    mul_expression                 shift and go to state 67
+    dev_expression                 shift and go to state 68
+    dev_rest_expression            shift and go to state 69
+    function_call                  shift and go to state 72
+    array_name                     shift and go to state 36
+    expression                     shift and go to state 75
+    function_name                  shift and go to state 38
+
+state 140
+
+    (48) and_condition -> condition and_operator simple_condition .
+
+    and_operator    reduce using rule 48 (and_condition -> condition and_operator simple_condition .)
+    or_operator     reduce using rule 48 (and_condition -> condition and_operator simple_condition .)
+    semicolon       reduce using rule 48 (and_condition -> condition and_operator simple_condition .)
+    close_parenthesise reduce using rule 48 (and_condition -> condition and_operator simple_condition .)
+
+
+state 141
+
+    (47) or_condition -> condition or_operator simple_condition .
+
+    and_operator    reduce using rule 47 (or_condition -> condition or_operator simple_condition .)
+    or_operator     reduce using rule 47 (or_condition -> condition or_operator simple_condition .)
+    semicolon       reduce using rule 47 (or_condition -> condition or_operator simple_condition .)
+    close_parenthesise reduce using rule 47 (or_condition -> condition or_operator simple_condition .)
+
+
+state 142
+
+    (50) les_condition -> expression less_operator expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    and_operator    reduce using rule 50 (les_condition -> expression less_operator expression .)
+    or_operator     reduce using rule 50 (les_condition -> expression less_operator expression .)
+    semicolon       reduce using rule 50 (les_condition -> expression less_operator expression .)
+    close_parenthesise reduce using rule 50 (les_condition -> expression less_operator expression .)
+    add_operator    shift and go to state 109
+    sub_operator    shift and go to state 110
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
+
+
 state 143
+
+    (51) grater_condition -> expression greater_operator expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    and_operator    reduce using rule 51 (grater_condition -> expression greater_operator expression .)
+    or_operator     reduce using rule 51 (grater_condition -> expression greater_operator expression .)
+    semicolon       reduce using rule 51 (grater_condition -> expression greater_operator expression .)
+    close_parenthesise reduce using rule 51 (grater_condition -> expression greater_operator expression .)
+    add_operator    shift and go to state 109
+    sub_operator    shift and go to state 110
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
+
+
+state 144
+
+    (52) equality_condition -> expression equality_operator expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    and_operator    reduce using rule 52 (equality_condition -> expression equality_operator expression .)
+    or_operator     reduce using rule 52 (equality_condition -> expression equality_operator expression .)
+    semicolon       reduce using rule 52 (equality_condition -> expression equality_operator expression .)
+    close_parenthesise reduce using rule 52 (equality_condition -> expression equality_operator expression .)
+    add_operator    shift and go to state 109
+    sub_operator    shift and go to state 110
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
+
+
+state 145
+
+    (53) not_equals_condition -> expression not_equals_operator expression .
+    (84) add_expression -> expression . add_operator expression
+    (85) sub_expression -> expression . sub_operator expression
+    (86) mul_expression -> expression . asterisk expression
+    (87) dev_expression -> expression . dev_operator expression
+    (88) dev_rest_expression -> expression . dev_rest_operator expression
+
+    and_operator    reduce using rule 53 (not_equals_condition -> expression not_equals_operator expression .)
+    or_operator     reduce using rule 53 (not_equals_condition -> expression not_equals_operator expression .)
+    semicolon       reduce using rule 53 (not_equals_condition -> expression not_equals_operator expression .)
+    close_parenthesise reduce using rule 53 (not_equals_condition -> expression not_equals_operator expression .)
+    add_operator    shift and go to state 109
+    sub_operator    shift and go to state 110
+    asterisk        shift and go to state 111
+    dev_operator    shift and go to state 112
+    dev_rest_operator shift and go to state 113
+
+
+state 146
+
+    (49) condition_in_parenthesise -> open_parenthesise condition close_parenthesise .
+
+    and_operator    reduce using rule 49 (condition_in_parenthesise -> open_parenthesise condition close_parenthesise .)
+    or_operator     reduce using rule 49 (condition_in_parenthesise -> open_parenthesise condition close_parenthesise .)
+    semicolon       reduce using rule 49 (condition_in_parenthesise -> open_parenthesise condition close_parenthesise .)
+    close_parenthesise reduce using rule 49 (condition_in_parenthesise -> open_parenthesise condition close_parenthesise .)
+
+
+state 147
+
+    (54) if_statement -> if_keyword open_parenthesise condition close_parenthesise . scope else_statement
+    (55) if_statement -> if_keyword open_parenthesise condition close_parenthesise . scope
+    (37) scope -> . scope_start code_block scope_end
+    (35) scope_start -> . open_curly_brackets
+
+    open_curly_brackets shift and go to state 154
+
+    scope                          shift and go to state 152
+    scope_start                    shift and go to state 153
+
+state 148
 
     (57) while_statement -> while_keyword open_parenthesise condition close_parenthesise . scope
     (37) scope -> . scope_start code_block scope_end
     (35) scope_start -> . open_curly_brackets
 
-    open_curly_brackets shift and go to state 150
+    open_curly_brackets shift and go to state 154
 
-    scope                          shift and go to state 157
-    scope_start                    shift and go to state 149
+    scope                          shift and go to state 155
+    scope_start                    shift and go to state 153
 
-state 144
+state 149
 
     (9) function_impl_parameters -> function_impl_parameters comma data_type new_function_parameter_name .
 
@@ -3362,14 +3446,14 @@ state 144
     comma           reduce using rule 9 (function_impl_parameters -> function_impl_parameters comma data_type new_function_parameter_name .)
 
 
-state 145
+state 150
 
     (62) def_array -> data_type new_var_name open_brackets simple_int_value close_brackets .
 
     semicolon       reduce using rule 62 (def_array -> data_type new_var_name open_brackets simple_int_value close_brackets .)
 
 
-state 146
+state 151
 
     (14) function_call_parameters -> function_call_parameters comma value .
 
@@ -3377,16 +3461,7 @@ state 146
     comma           reduce using rule 14 (function_call_parameters -> function_call_parameters comma value .)
 
 
-state 147
-
-    (49) condition_in_parenthesise -> open_parenthesise condition close_parenthesise .
-
-    close_parenthesise reduce using rule 49 (condition_in_parenthesise -> open_parenthesise condition close_parenthesise .)
-    and_operator    reduce using rule 49 (condition_in_parenthesise -> open_parenthesise condition close_parenthesise .)
-    or_operator     reduce using rule 49 (condition_in_parenthesise -> open_parenthesise condition close_parenthesise .)
-
-
-state 148
+state 152
 
     (54) if_statement -> if_keyword open_parenthesise condition close_parenthesise scope . else_statement
     (55) if_statement -> if_keyword open_parenthesise condition close_parenthesise scope .
@@ -3404,11 +3479,11 @@ state 148
     print           reduce using rule 55 (if_statement -> if_keyword open_parenthesise condition close_parenthesise scope .)
     print_array     reduce using rule 55 (if_statement -> if_keyword open_parenthesise condition close_parenthesise scope .)
     name            reduce using rule 55 (if_statement -> if_keyword open_parenthesise condition close_parenthesise scope .)
-    else_keyword    shift and go to state 159
+    else_keyword    shift and go to state 157
 
-    else_statement                 shift and go to state 158
+    else_statement                 shift and go to state 156
 
-state 149
+state 153
 
     (37) scope -> scope_start . code_block scope_end
     (19) code_block -> . statement
@@ -3438,7 +3513,7 @@ state 149
     (94) exit_statement -> . exit int_expression
     (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
     (3) return_statement -> . return return_value
-    (4) assert_statement -> . assert value comma value
+    (4) assert_statement -> . assert condition
     (54) if_statement -> . if_keyword open_parenthesise condition close_parenthesise scope else_statement
     (55) if_statement -> . if_keyword open_parenthesise condition close_parenthesise scope
     (57) while_statement -> . while_keyword open_parenthesise condition close_parenthesise scope
@@ -3490,7 +3565,7 @@ state 149
   ! print_array     [ reduce using rule 21 (code_block -> .) ]
   ! name            [ reduce using rule 21 (code_block -> .) ]
 
-    code_block                     shift and go to state 160
+    code_block                     shift and go to state 158
     statement                      shift and go to state 16
     basic_block_command            shift and go to state 17
     block                          shift and go to state 18
@@ -3515,7 +3590,7 @@ state 149
     var_name                       shift and go to state 43
     array_cell                     shift and go to state 44
 
-state 150
+state 154
 
     (35) scope_start -> open_curly_brackets .
 
@@ -3533,101 +3608,7 @@ state 150
     close_curly_brackets reduce using rule 35 (scope_start -> open_curly_brackets .)
 
 
-state 151
-
-    (48) and_condition -> condition and_operator simple_condition .
-
-    close_parenthesise reduce using rule 48 (and_condition -> condition and_operator simple_condition .)
-    and_operator    reduce using rule 48 (and_condition -> condition and_operator simple_condition .)
-    or_operator     reduce using rule 48 (and_condition -> condition and_operator simple_condition .)
-
-
-state 152
-
-    (47) or_condition -> condition or_operator simple_condition .
-
-    close_parenthesise reduce using rule 47 (or_condition -> condition or_operator simple_condition .)
-    and_operator    reduce using rule 47 (or_condition -> condition or_operator simple_condition .)
-    or_operator     reduce using rule 47 (or_condition -> condition or_operator simple_condition .)
-
-
-state 153
-
-    (50) les_condition -> expression less_operator expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    close_parenthesise reduce using rule 50 (les_condition -> expression less_operator expression .)
-    and_operator    reduce using rule 50 (les_condition -> expression less_operator expression .)
-    or_operator     reduce using rule 50 (les_condition -> expression less_operator expression .)
-    add_operator    shift and go to state 97
-    sub_operator    shift and go to state 98
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
-
-
-state 154
-
-    (51) grater_condition -> expression greater_operator expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    close_parenthesise reduce using rule 51 (grater_condition -> expression greater_operator expression .)
-    and_operator    reduce using rule 51 (grater_condition -> expression greater_operator expression .)
-    or_operator     reduce using rule 51 (grater_condition -> expression greater_operator expression .)
-    add_operator    shift and go to state 97
-    sub_operator    shift and go to state 98
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
-
-
 state 155
-
-    (52) equality_condition -> expression equality_operator expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    close_parenthesise reduce using rule 52 (equality_condition -> expression equality_operator expression .)
-    and_operator    reduce using rule 52 (equality_condition -> expression equality_operator expression .)
-    or_operator     reduce using rule 52 (equality_condition -> expression equality_operator expression .)
-    add_operator    shift and go to state 97
-    sub_operator    shift and go to state 98
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
-
-
-state 156
-
-    (53) not_equals_condition -> expression not_equals_operator expression .
-    (84) add_expression -> expression . add_operator expression
-    (85) sub_expression -> expression . sub_operator expression
-    (86) mul_expression -> expression . asterisk expression
-    (87) dev_expression -> expression . dev_operator expression
-    (88) dev_rest_expression -> expression . dev_rest_operator expression
-
-    close_parenthesise reduce using rule 53 (not_equals_condition -> expression not_equals_operator expression .)
-    and_operator    reduce using rule 53 (not_equals_condition -> expression not_equals_operator expression .)
-    or_operator     reduce using rule 53 (not_equals_condition -> expression not_equals_operator expression .)
-    add_operator    shift and go to state 97
-    sub_operator    shift and go to state 98
-    asterisk        shift and go to state 99
-    dev_operator    shift and go to state 100
-    dev_rest_operator shift and go to state 101
-
-
-state 157
 
     (57) while_statement -> while_keyword open_parenthesise condition close_parenthesise scope .
 
@@ -3645,7 +3626,7 @@ state 157
     name            reduce using rule 57 (while_statement -> while_keyword open_parenthesise condition close_parenthesise scope .)
 
 
-state 158
+state 156
 
     (54) if_statement -> if_keyword open_parenthesise condition close_parenthesise scope else_statement .
 
@@ -3663,18 +3644,18 @@ state 158
     name            reduce using rule 54 (if_statement -> if_keyword open_parenthesise condition close_parenthesise scope else_statement .)
 
 
-state 159
+state 157
 
     (56) else_statement -> else_keyword . scope
     (37) scope -> . scope_start code_block scope_end
     (35) scope_start -> . open_curly_brackets
 
-    open_curly_brackets shift and go to state 150
+    open_curly_brackets shift and go to state 154
 
-    scope                          shift and go to state 161
-    scope_start                    shift and go to state 149
+    scope                          shift and go to state 159
+    scope_start                    shift and go to state 153
 
-state 160
+state 158
 
     (37) scope -> scope_start code_block . scope_end
     (20) code_block -> code_block . statement
@@ -3703,7 +3684,7 @@ state 160
     (94) exit_statement -> . exit int_expression
     (15) function_call -> . function_name open_parenthesise function_call_parameters close_parenthesise
     (3) return_statement -> . return return_value
-    (4) assert_statement -> . assert value comma value
+    (4) assert_statement -> . assert condition
     (54) if_statement -> . if_keyword open_parenthesise condition close_parenthesise scope else_statement
     (55) if_statement -> . if_keyword open_parenthesise condition close_parenthesise scope
     (57) while_statement -> . while_keyword open_parenthesise condition close_parenthesise scope
@@ -3719,7 +3700,7 @@ state 160
     (63) array_cell -> . array_name open_brackets value close_brackets
     (90) array_name -> . name
 
-    close_curly_brackets shift and go to state 163
+    close_curly_brackets shift and go to state 161
     read_line       shift and go to state 35
     exit            shift and go to state 37
     return          shift and go to state 39
@@ -3732,7 +3713,7 @@ state 160
     print_array     shift and go to state 46
     name            shift and go to state 47
 
-    scope_end                      shift and go to state 162
+    scope_end                      shift and go to state 160
     statement                      shift and go to state 51
     basic_block_command            shift and go to state 17
     block                          shift and go to state 18
@@ -3757,7 +3738,7 @@ state 160
     var_name                       shift and go to state 43
     array_cell                     shift and go to state 44
 
-state 161
+state 159
 
     (56) else_statement -> else_keyword scope .
 
@@ -3775,7 +3756,7 @@ state 161
     name            reduce using rule 56 (else_statement -> else_keyword scope .)
 
 
-state 162
+state 160
 
     (37) scope -> scope_start code_block scope_end .
 
@@ -3794,7 +3775,7 @@ state 162
     name            reduce using rule 37 (scope -> scope_start code_block scope_end .)
 
 
-state 163
+state 161
 
     (36) scope_end -> close_curly_brackets .
 
@@ -3826,14 +3807,14 @@ WARNING: shift/reduce conflict for char_keyword in state 11 resolved as shift
 WARNING: shift/reduce conflict for print in state 11 resolved as shift
 WARNING: shift/reduce conflict for print_array in state 11 resolved as shift
 WARNING: shift/reduce conflict for name in state 11 resolved as shift
-WARNING: shift/reduce conflict for read_line in state 149 resolved as shift
-WARNING: shift/reduce conflict for exit in state 149 resolved as shift
-WARNING: shift/reduce conflict for return in state 149 resolved as shift
-WARNING: shift/reduce conflict for assert in state 149 resolved as shift
-WARNING: shift/reduce conflict for if_keyword in state 149 resolved as shift
-WARNING: shift/reduce conflict for while_keyword in state 149 resolved as shift
-WARNING: shift/reduce conflict for int_32_keyword in state 149 resolved as shift
-WARNING: shift/reduce conflict for char_keyword in state 149 resolved as shift
-WARNING: shift/reduce conflict for print in state 149 resolved as shift
-WARNING: shift/reduce conflict for print_array in state 149 resolved as shift
-WARNING: shift/reduce conflict for name in state 149 resolved as shift
+WARNING: shift/reduce conflict for read_line in state 153 resolved as shift
+WARNING: shift/reduce conflict for exit in state 153 resolved as shift
+WARNING: shift/reduce conflict for return in state 153 resolved as shift
+WARNING: shift/reduce conflict for assert in state 153 resolved as shift
+WARNING: shift/reduce conflict for if_keyword in state 153 resolved as shift
+WARNING: shift/reduce conflict for while_keyword in state 153 resolved as shift
+WARNING: shift/reduce conflict for int_32_keyword in state 153 resolved as shift
+WARNING: shift/reduce conflict for char_keyword in state 153 resolved as shift
+WARNING: shift/reduce conflict for print in state 153 resolved as shift
+WARNING: shift/reduce conflict for print_array in state 153 resolved as shift
+WARNING: shift/reduce conflict for name in state 153 resolved as shift

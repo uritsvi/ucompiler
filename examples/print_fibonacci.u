@@ -1,0 +1,38 @@
+void print_fibonacci(int_32 c,
+                     int_32 n1,
+                     int_32 n2,
+                     int_32 n3)
+{
+    if (c > 0)
+    {
+        n3 = n1 + n2;
+        n1 = n2;
+        n2 = n3;
+
+        @print n3;
+
+        print_fibonacci(c - 1,
+                        n1,
+                        n2,
+                        n3);
+    }
+}
+
+void main()
+{
+    int_32 start_n1 = 0;
+    int_32 start_n2 = 1;
+    int_32 start_n3 = 0;
+
+    int_32 count = 21;
+
+    print_fibonacci(count,
+                    start_n1,
+                    start_n2,
+                    start_n3);
+
+    @assert count == 21;
+    @assert start_n3 == 0;
+    @assert start_n2 == 1;
+    @assert start_n1 == 0;
+}

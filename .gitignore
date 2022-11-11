@@ -3,3 +3,8 @@ parsetab.py
 __pycache__
 .idea
 venv
+
+*.exe
+*.lnk
+*.obj
+*.asm

@@ -30,5 +30,5 @@ void main()
         i = i + 1;
     }
 
-    @assert i, 20;
+    @assert i == 19;
 }

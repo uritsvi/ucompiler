@@ -1,0 +1,22 @@
+int_32 a()
+{
+    return 4;
+}
+
+int_32 b()
+{
+    return 2;
+}
+
+void main()
+{
+    if (a() / b() == 2)
+    {
+        @print "good";
+    }
+    else
+    {
+        @print "error";
+        @exit 1;
+    }
+}

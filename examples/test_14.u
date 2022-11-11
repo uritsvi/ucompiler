@@ -12,6 +12,6 @@ void main()
         @exit 1;
     }
 
-    @assert a, 10;
-    @assert b, 'r';
+    @assert a == 10;
+    @assert b == 'r';
 }

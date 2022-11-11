@@ -1,0 +1,9 @@
+void a()
+{
+    @print "hello world\n";
+}
+
+void main()
+{
+    a();    
+}

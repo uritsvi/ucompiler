@@ -19,6 +19,6 @@ void main()
 
     @print sum;
 
-    @assert i, 4;
-    @assert sum, 5;
+    @assert i == 4;
+    @assert sum == 5;
 }

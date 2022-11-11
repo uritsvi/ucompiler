@@ -11,8 +11,8 @@ void main()
         a = 6;
     }
 
-    @assert c, 1;
-    @assert a, 5;
+    @assert c == 1;
+    @assert a == 5;
 
     @print a;
 }

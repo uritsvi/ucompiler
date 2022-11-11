@@ -5,7 +5,7 @@ void main()
     if (a > 2)
     {
         @print a;
-        @assert a, 5;
+        @assert a == 5;
     }
     else
     {

@@ -2,7 +2,7 @@ void main()
 {
     int_32 a = 5;
 
-    @assert a, 5;
+    @assert a == 5;
 
     @print "Hello\n";
     @print a;

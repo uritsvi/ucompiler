@@ -42,7 +42,7 @@ void main()
 
     @print "done\n";
 
-    @assert i, 6;
-    @assert n, 5;
-    @assert p, 3;
+    @assert i == 6;
+    @assert n == 5;
+    @assert p == 3;
 }

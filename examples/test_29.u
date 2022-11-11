@@ -1,0 +1,23 @@
+int_32 a(int_32 num)
+{
+    return num / 4;
+}
+int_32 b(int_32 num)
+{
+    return num / 6;
+}
+
+void main()
+{
+    int_32 a_num = 8;
+    int_32 b_num = 12;
+
+    int_32 res = a(a_num) / b(b_num);
+
+    @print res;
+
+    @assert a_num == 8;
+    @assert b_num == 12;
+
+    @assert res == 1;
+}

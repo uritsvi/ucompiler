@@ -24,6 +24,6 @@ void main()
 
     @print sum;
 
-    @assert i, 100;
-    @assert sum, 49;
+    @assert i == 100;
+    @assert sum == 49;
 }

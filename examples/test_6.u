@@ -16,6 +16,6 @@ void main()
 
     @print a;
 
-    @assert a, 7;
-    @assert c, 5;
+    @assert a == 7;
+    @assert c == 5;
 }

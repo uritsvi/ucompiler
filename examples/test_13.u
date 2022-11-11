@@ -12,6 +12,6 @@ void main()
 
     @print d *c;
 
-    @assert d, 2;
-    @assert c, 19;
+    @assert d == 2;
+    @assert c == 19;
 }

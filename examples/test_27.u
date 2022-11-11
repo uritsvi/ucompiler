@@ -1,0 +1,23 @@
+int_32 add(int_32 a, int_32 b)
+{
+    int_32 res = a + b;
+
+    return res;
+}
+
+int_32 sub(int_32 a, int_32 b)
+{
+    int_32 res = a - b;
+
+    return res;
+}
+
+void main()
+{
+    int_32 res = sub(6, 5);
+    res = add(res, 10);
+
+    @print res;
+
+    @assert res == 11;
+}

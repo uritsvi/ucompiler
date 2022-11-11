@@ -232,7 +232,7 @@ def p_return_statement(p):
     return_value = p[2]
 
     current_function =  \
-        SymbolTable.FunctionsTabel.get_instance().get_current_function()
+        SymbolTable.FunctionsTable.get_instance().get_current_function()
 
     current_function_prototype = \
         current_function.get_function_prototype()
@@ -254,14 +254,16 @@ def p_return_statement(p):
 
 
 def p_assert_statement(p):
-    """assert_statement : assert value comma value"""
+    """assert_statement : assert condition"""
+
+    condition = p[2]
 
     then_part = AST.AST_CodeBlock()
-    then_part.add_statement(AST.AST_PrintString("Assertion failed! in line" + " " + str(p.lexer.lineno)))
+    else_part = AST.AST_CodeBlock()
+    else_part.add_statement(AST.AST_PrintString("Assertion failed in line " + str(p.lexer.lineno) + ": " + p[2].write()))
     then_part.add_statement(AST.AST_Exit(AST.AST_Integer(1, DataTypes.int_32())))
 
-    condition = AST.AST_Condition(p[2], AST.AST_NotEqualsOperator(), p[4])
-    if_statement = AST.AST_IfStatement(condition, then_part, None)
+    if_statement = AST.AST_IfStatement(condition, then_part, else_part)
 
     p[0] = if_statement
 
@@ -309,7 +311,7 @@ def p_function_prototype_start(p):
     function_prototype = \
         SymbolTable.SymbolTableFunctionPrototype(p[2], p[1])
 
-    SymbolTable.FunctionsTabel.get_instance().\
+    SymbolTable.FunctionsTable.get_instance().\
         set_current_prototype(function_prototype)
 
     p[0] = function_prototype
@@ -324,12 +326,12 @@ def p_function_prototype(p):
     function_prototype.set_parameters(p[3])
 
     function_table_name = \
-        SymbolTable.FunctionsTabel.get_instance().map_function_name_to_table_name(function_name)
+        SymbolTable.FunctionsTable.get_instance().map_function_name_to_table_name(function_name)
 
     symbol_table_function = \
-        SymbolTable.SymbolTabelFunction(function_table_name, function_prototype)
+        SymbolTable.SymbolTableFunction(function_table_name, function_prototype)
 
-    SymbolTable.FunctionsTabel.get_instance().add_function(symbol_table_function)
+    SymbolTable.FunctionsTable.get_instance().add_function(symbol_table_function)
 
     p[0] = symbol_table_function
 
@@ -367,7 +369,7 @@ def p_function_call(p):
         return
 
     function_table_name = \
-        SymbolTable.FunctionsTabel.get_instance().get_function_tabel_name(function_name)
+        SymbolTable.FunctionsTable.get_instance().get_function_table_name(function_name)
 
     function_call = \
         AST.AST_FunctionCall(function_table_name, parameters)
@@ -442,7 +444,7 @@ def p_block(p):
 def p_scope_start(p):
     """scope_start : open_curly_brackets"""
 
-    SymbolTable.FunctionsTabel.get_instance().\
+    SymbolTable.FunctionsTable.get_instance().\
         get_current_function().push_table()
 
     p[0] = p[1]
@@ -451,7 +453,7 @@ def p_scope_start(p):
 def p_scope_end(p):
     """scope_end : close_curly_brackets"""
 
-    SymbolTable.FunctionsTabel.get_instance(). \
+    SymbolTable.FunctionsTable.get_instance(). \
         get_current_function().pop_table()
 
     p[0] = p[1]
@@ -574,7 +576,7 @@ def p_def_var(p):
     data_type = p[1]
     var = AST.AST_Variable(p[2], data_type)
 
-    SymbolTable.FunctionsTabel.get_instance().get_current_tabel().\
+    SymbolTable.FunctionsTable.get_instance().get_current_table().\
         add_var(var.get_name(), data_type)
 
     if len(p) == 3:
@@ -602,7 +604,7 @@ def p_def_array(p):
 
     data_type = DataTypes.Array(data_type, array_len)
 
-    SymbolTable.FunctionsTabel.get_instance().get_current_tabel().\
+    SymbolTable.FunctionsTable.get_instance().get_current_table().\
         add_array(new_var, data_type)
 
 
@@ -657,7 +659,7 @@ def p_function_call_value(p):
     function_call = p[1]
     function_name = function_call.get_name()
 
-    function_data_type = SymbolTable.FunctionsTabel.get_instance().\
+    function_data_type = SymbolTable.FunctionsTable.get_instance().\
         get_function(function_name).get_function_prototype().get_return_value_type()
 
     AST_function_call_return_value = \
@@ -749,21 +751,21 @@ def p_dev_rest_expression(p):
 def p_var_name(p):
     """var_name : name"""
 
-    current_tabel =\
-        SymbolTable.FunctionsTabel.get_instance().get_current_tabel()
+    current_table =\
+        SymbolTable.FunctionsTable.get_instance().get_current_table()
 
     res = \
-        current_tabel.var_accessible_in_scope(p[1])
+        current_table.var_accessible_in_scope(p[1])
 
     if not res:
         Utils.Utils.handle_compiler_error("Var " + p[1] + " dose not exist in current scope")
         return
     else:
         var_name = \
-            current_tabel.get_var_name(p[1])
+            current_table.get_var_name(p[1])
 
         var_data_type = \
-            current_tabel.get_var(var_name)
+            current_table.get_var(var_name)
 
     AST_var = AST.AST_Variable(var_name, var_data_type.get_data_type())
     p[0] = AST_var
@@ -772,10 +774,10 @@ def p_var_name(p):
 def p_array_name(p):
     """array_name : name"""
 
-    current_tabel =\
-        SymbolTable.FunctionsTabel.get_instance().get_current_tabel()
+    current_table =\
+        SymbolTable.FunctionsTable.get_instance().get_current_table()
 
-    res = current_tabel\
+    res = current_table\
         .array_accessible_in_scope(p[1])
 
     if not res:
@@ -784,10 +786,10 @@ def p_array_name(p):
 
     else:
         var_name = \
-            current_tabel.get_var_name(p[1])
+            current_table.get_var_name(p[1])
 
         var_data_type = \
-            current_tabel.get_array(var_name)
+            current_table.get_array(var_name)
 
     AST_var = AST.AST_Array(var_name, var_data_type)
     p[0] = AST_var
@@ -798,7 +800,7 @@ def p_new_function_parameter_name(p):
 
     new_name = p[1]
 
-    table_name = SymbolTable.FunctionsTabel.get_instance().get_current_prototype().\
+    table_name = SymbolTable.FunctionsTable.get_instance().get_current_prototype().\
         map_arg_name_to_table_name(new_name)
 
     p[0] = table_name
@@ -807,18 +809,18 @@ def p_new_function_parameter_name(p):
 def p_new_var_name(p):
     """new_var_name : name"""
 
-    current_tabel =\
-        SymbolTable.FunctionsTabel.get_instance().get_current_tabel()
+    current_table =\
+        SymbolTable.FunctionsTable.get_instance().get_current_table()
 
     res = \
-        current_tabel.var_exist_in_scope(p[1])
+        current_table.var_exist_in_scope(p[1])
 
     if res:
         Utils.Utils.handle_compiler_error("Var " + p[1] + " already exist in current scope")
         return
 
     var_name = \
-        current_tabel.map_var_name_to_symbol_tabel_name(p[1])
+        current_table.map_var_name_to_symbol_table_name(p[1])
 
     p[0] = var_name
 

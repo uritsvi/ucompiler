@@ -546,7 +546,7 @@ class IR_ArrayCell(IR_Value):
         return self.__ir_array.get_data_type()
 
 
-class IR_SymbolTabel:
+class IR_SymbolTable:
     def __init__(self):
         self.__vars = {}
         self.__arrays = {}
@@ -680,9 +680,9 @@ class IR_Generator(AST_Visitor):
         self.visit(main_AST, Context())
         return self.__program
 
-    # creates an ir symbol tabel from a symbol tabel(class implemented in file SymbolTabel.py)
+    # creates an ir symbol table from a symbol table(class implemented in file SymbolTable.py)
     def __create_ir_symbol_table(self, symbol_tables, context):
-        ir_table = IR_SymbolTabel()
+        ir_table = IR_SymbolTable()
 
         for table in symbol_tables:
             for var in table.get_all_vars():

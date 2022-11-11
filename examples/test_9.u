@@ -9,5 +9,5 @@ void main()
 
     @print a;
 
-    @assert a, 2;
+    @assert a == 2;
 }

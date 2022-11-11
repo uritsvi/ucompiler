@@ -32,9 +32,9 @@ void main()
         j = j + 1;
     }
 
-    @assert i, 1;
-    @assert j, 11;
-    @assert range, 10;
-    @assert min, 1;
-    @assert temp, 0;
+    @assert i == 1;
+    @assert j == 11;
+    @assert range == 10;
+    @assert min == 1;
+    @assert temp == 0;
 }

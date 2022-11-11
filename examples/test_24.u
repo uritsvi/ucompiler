@@ -1,0 +1,17 @@
+int_32 a()
+{
+    return 4;
+}
+
+int_32 b()
+{
+    return 2;
+}
+
+void main()
+{
+    int_32 c = a() / b();
+    @print c;
+
+    @assert c == 2;
+}

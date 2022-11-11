@@ -190,7 +190,7 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
     @classmethod
     def __write_call_to_main(cls):
         main_function_name = \
-            SymbolTable.FunctionsTabel.get_instance().get_function_tabel_name("main")
+            SymbolTable.FunctionsTable.get_instance().get_function_table_name("main")
 
         if main_function_name is None:
             Utils.Utils.handle_compiler_error("Every program needs to contains a main function entry")
@@ -443,18 +443,18 @@ class ASM_X86_Generator(ASM.ASM_Generator, IR_Writer):
 
         context.append_string(string)
 
-    @writer(IR.IR_SymbolTabel)
+    @writer(IR.IR_SymbolTable)
     def write(self, symbol_table, context):
         string = ""
 
-        symbol_tabel_vars = symbol_table.get_all_vars()
+        symbol_table_vars = symbol_table.get_all_vars()
 
-        symbol_tabel_vars[self.__div_temp_RES] = \
+        symbol_table_vars[self.__div_temp_RES] = \
             (SymbolTable.Var(self.__div_temp_RES, DataTypes.int_32()))
 
         arrays = symbol_table.get_all_arrays()
 
-        for var in symbol_tabel_vars.values():
+        for var in symbol_table_vars.values():
             string += self.__write_def_var(var.get_name(),
                                            self.__data_type_to_asm_data_type
                                            (var.get_data_type().get_size_in_bites())) + "\n"

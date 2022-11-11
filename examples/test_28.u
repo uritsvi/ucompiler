@@ -1,0 +1,26 @@
+int_32 add_one(int_32 a)
+{
+    return a + 1;
+}
+int_32 add_two(int_32 a)
+{
+    return a + 2;
+}
+int_32 add_three(int_32 a)
+{
+    return a + 3;
+}
+int_32 add_four(int_32 a)
+{
+    return a + 4;
+}
+
+void main()
+{
+    int_32 res =
+        add_one(add_two(add_three(add_four(1))));
+
+    @print res;
+
+    @assert res == 11;
+}

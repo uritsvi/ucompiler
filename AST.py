@@ -1,5 +1,7 @@
 from abc import abstractmethod
 
+import SymbolTable
+
 
 class AST_Node:
     pass
@@ -33,6 +35,10 @@ class AST_Value(AST_Node):
     def get_data_type(self):
         pass
 
+    @abstractmethod
+    def write(self):
+        pass
+
 
 class AST_FunctionCallReturnValue(AST_Value):
     def __init__(self, function_call, function_return_data_type):
@@ -44,6 +50,10 @@ class AST_FunctionCallReturnValue(AST_Value):
 
     def get_function_call(self):
         return self.__function_call
+
+    def write(self):
+        string = self.__function_call.get_name()
+        return string
 
 
 class AST_Integer(AST_Value):
@@ -57,6 +67,10 @@ class AST_Integer(AST_Value):
     def get_data_type(self):
         return self.__data_type
 
+    def write(self):
+        string = str(self.__value)
+        return string
+
 
 class AST_Variable(AST_Value):
     def __init__(self, name, data_type):
@@ -68,6 +82,10 @@ class AST_Variable(AST_Value):
 
     def get_data_type(self):
         return self.__data_type
+
+    def write(self):
+        string = SymbolTable.FunctionsTable.get_instance().get_current_table().get_old_name(self.__name)
+        return string
 
 
 class AST_Array:
@@ -103,6 +121,9 @@ class AST_ArrayCell(AST_Value):
     def get_name(self):
         return self.__array_name.get_name()
 
+    def write(self):
+        string = self.__array_name + "[" + str(self.__index) + "]"
+
 
 class AST_Expression(AST_Value):
     def __init__(self, expression_1, operator, expression_2):
@@ -125,6 +146,10 @@ class AST_Expression(AST_Value):
 
     def set_data_type(self, data_type):
         self.__data_type = data_type
+
+    def write(self):
+        string = self.__expression_1.write() + self.__operator.write() + self.__expression_2.write()
+        return string
 
 
 class AST_DefVar(AST_Node):
@@ -202,6 +227,11 @@ class AST_Condition(AST_Node):
     def get_expression_2(self):
         return self.__right_expression
 
+    def write(self):
+        string = self.__left_expression.write() + " " + self.__operator.write() + " " + self.__right_expression.write()
+
+        return string
+
 
 class AST_ComplexCondition(AST_Node):
     def __init__(self, left_condition, operator, right_condition):
@@ -220,59 +250,87 @@ class AST_ComplexCondition(AST_Node):
 
 
 class AST_Operator(AST_Node):
-    pass
+    @abstractmethod
+    def write(self):
+        pass
 
 
 class AST_MathOperator(AST_Operator):
-    pass
+    @abstractmethod
+    def write(self):
+        pass
 
 
 class AST_Add_Operator(AST_MathOperator):
-    pass
+    def write(self):
+        string = "+"
+        return string
 
 
 class AST_Sub_Operator(AST_MathOperator):
-    pass
+    def write(self):
+        string = "-"
+        return string
 
 
 class AST_Mul_Operator(AST_MathOperator):
-    pass
+    def write(self):
+        string = "*"
+        return string
 
 
 class AST_Div_Operator(AST_MathOperator):
-    pass
+    def write(self):
+        string = "/"
+        return string
 
 
 class AST_Remainder_Operator(AST_Operator):
-    pass
+    def write(self):
+        string = "%"
+        return string
 
 
 class AST_ConditionOperator(AST_Operator):
-    pass
+    @abstractmethod
+    def write(self):
+        pass
 
 
 class AST_LessOperator(AST_ConditionOperator):
-    pass
+    def write(self):
+        string = "<"
+        return string
 
 
 class AST_GreaterOperator(AST_ConditionOperator):
-    pass
+    def write(self):
+        string = ">"
+        return string
 
 
 class AST_EqualityOperator(AST_ConditionOperator):
-    pass
+    def write(self):
+        string = "=="
+        return string
 
 
 class AST_NotEqualsOperator(AST_ConditionOperator):
-    pass
+    def write(self):
+        string = "!="
+        return string
 
 
 class AST_AndOperator(AST_ConditionOperator):
-    pass
+    def write(self):
+        string = "&&"
+        return string
 
 
 class AST_OrOperator(AST_ConditionOperator):
-    pass
+    def write(self):
+        string = "||"
+        return string
 
 
 class AST_ReadLine(AST_Node):
@@ -324,9 +382,9 @@ class AST_Exit(AST_Node):
 
 
 class AST_Function(AST_Node):
-    def __init__(self, symbol_tabel_function, code_block):
+    def __init__(self, symbol_table_function, code_block):
         self.__code_block = code_block
-        self.__symbol_table_function = symbol_tabel_function
+        self.__symbol_table_function = symbol_table_function
 
     def get_code_block(self):
         return self.__code_block

@@ -46,7 +46,7 @@ class IR_Writer:
         pass
 
     @abstractmethod
-    @writer(IR.IR_SymbolTabel)
+    @writer(IR.IR_SymbolTable)
     def write(self, symbol_table, context):
         pass
 
